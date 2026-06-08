@@ -17,7 +17,9 @@ import { EnvironmentVariables, validateEnvironment } from './config/environment'
         const nodeEnv = configService.get('NODE_ENV', { infer: true });
         const logFormat = configService.get('LOG_FORMAT', { infer: true });
         const logLevels: LogLevel[] =
-          nodeEnv === 'production' ? ['error', 'warn', 'log'] : ['error', 'warn', 'log', 'debug'];
+          nodeEnv === 'production'
+            ? ['error', 'fatal', 'warn', 'log']
+            : ['error', 'fatal', 'warn', 'log', 'debug'];
 
         return new ConsoleLogger({
           colors: logFormat !== 'json',
