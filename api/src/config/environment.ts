@@ -1,9 +1,19 @@
 import { z } from 'zod';
 
-export const environmentSchema = z.looseObject({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().min(1).max(65_535).default(3000)
-});
+const appLogFormats = ['pretty', 'json'] as const;
+
+export type AppLogFormat = (typeof appLogFormats)[number];
+
+export const environmentSchema = z
+  .looseObject({
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+    LOG_FORMAT: z.enum(appLogFormats).optional()
+  })
+  .transform((config) => ({
+    ...config,
+    LOG_FORMAT: config.LOG_FORMAT ?? (config.NODE_ENV === 'production' ? 'json' : 'pretty')
+  }));
 
 export type EnvironmentVariables = z.infer<typeof environmentSchema>;
 

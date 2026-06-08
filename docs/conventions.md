@@ -64,6 +64,7 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 - Production builds exclude `*.spec.ts`; keep test files named with the `.spec.ts` suffix.
 - Add or update tests when changing observable API behavior.
 - Prefer dependency injection over manual construction for framework-managed classes.
+- Use Nest's built-in `ConsoleLogger` for API logs; keep production logs single-line JSON for Render.
 
 ## Dependency Conventions
 
