@@ -29,11 +29,13 @@ Supported environment variables:
 - `PORT`: API port; defaults to `3000`
 - `LOG_FORMAT`: `pretty` or `json`; defaults to `pretty` outside production and `json` in production
 - `DATABASE_URL`: Postgres connection URL; required
+- `JWT_SECRET`: secret used to sign API bearer tokens; required
+- `JWT_ACCESS_TOKEN_TTL_SECONDS`: access token lifetime in seconds; defaults to `3600`
 
 Example:
 
 ```sh
-DATABASE_URL=postgres://envlock:envlock@localhost:5432/envlock PORT=4000 LOG_FORMAT=json npm run dev:api
+DATABASE_URL=postgres://envlock:envlock@localhost:5432/envlock JWT_SECRET=replace-me PORT=4000 LOG_FORMAT=json npm run dev:api
 ```
 
 ### Run The API

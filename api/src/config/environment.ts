@@ -9,7 +9,9 @@ export const environmentSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
     LOG_FORMAT: z.enum(appLogFormats).optional(),
-    DATABASE_URL: z.url().startsWith('postgres://').or(z.url().startsWith('postgresql://'))
+    DATABASE_URL: z.url().startsWith('postgres://').or(z.url().startsWith('postgresql://')),
+    JWT_SECRET: z.string().min(1),
+    JWT_ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(1).default(3600)
   })
   .transform((config) => ({
     ...config,

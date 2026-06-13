@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { type Repository } from 'typeorm';
@@ -26,8 +27,13 @@ function createUser(overrides: Partial<User> = {}): User {
 describe('UsersRepository', () => {
   let usersRepository: UsersRepository;
   let typeOrmRepository: TypeOrmUserRepositoryMock;
+  let debugSpy: jest.SpyInstance;
+  let logSpy: jest.SpyInstance;
 
   beforeEach(async () => {
+    debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
+    logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+
     typeOrmRepository = {
       create: jest.fn<User, [Partial<User>]>((input) => createUser(input)),
       save: jest.fn<Promise<User>, [User]>((user) => Promise.resolve(user)),
@@ -47,6 +53,10 @@ describe('UsersRepository', () => {
     usersRepository = module.get(UsersRepository);
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('creates users with a pending status by default', async () => {
     await expect(
       usersRepository.create({ email: 'new@example.com', passwordHash: 'hashed-password' })
@@ -64,6 +74,15 @@ describe('UsersRepository', () => {
     expect(typeOrmRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'new@example.com', status: 'pending' })
     );
+    expect(debugSpy).toHaveBeenCalledWith('Creating user record', {
+      email: 'new@example.com',
+      status: 'pending'
+    });
+    expect(logSpy).toHaveBeenCalledWith('User record created', {
+      userId: 'f2e93f1e-52d7-4ba0-aa67-5d3719e6b0f4',
+      email: 'new@example.com',
+      status: 'pending'
+    });
   });
 
   it('preserves explicit user status when creating users', async () => {
@@ -87,6 +106,11 @@ describe('UsersRepository', () => {
     await expect(usersRepository.findByEmail('found@example.com')).resolves.toBe(user);
 
     expect(typeOrmRepository.findOneBy).toHaveBeenCalledWith({ email: 'found@example.com' });
+    expect(debugSpy).toHaveBeenCalledWith('User lookup by email completed', {
+      email: 'found@example.com',
+      found: true,
+      userId: user.id
+    });
   });
 
   it('finds users by id', async () => {
@@ -99,6 +123,10 @@ describe('UsersRepository', () => {
 
     expect(typeOrmRepository.findOneBy).toHaveBeenCalledWith({
       id: '84007988-2b77-4878-b3c0-4127f19ce217'
+    });
+    expect(debugSpy).toHaveBeenCalledWith('User lookup by id completed', {
+      userId: '84007988-2b77-4878-b3c0-4127f19ce217',
+      found: true
     });
   });
 });

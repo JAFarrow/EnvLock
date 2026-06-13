@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -12,23 +12,57 @@ export interface CreateUserRecord {
 
 @Injectable()
 export class UsersRepository {
+  private readonly logger = new Logger(UsersRepository.name);
+
   constructor(@InjectRepository(User) private readonly repository: Repository<User>) {}
 
-  create(input: CreateUserRecord): Promise<User> {
+  async create(input: CreateUserRecord): Promise<User> {
+    this.logger.debug('Creating user record', {
+      email: input.email,
+      status: input.status ?? 'pending'
+    });
+
     const user = this.repository.create({
       email: input.email,
       passwordHash: input.passwordHash,
       status: input.status ?? 'pending'
     });
 
-    return this.repository.save(user);
+    const savedUser = await this.repository.save(user);
+
+    this.logger.log('User record created', {
+      userId: savedUser.id,
+      email: savedUser.email,
+      status: savedUser.status
+    });
+
+    return savedUser;
   }
 
-  findByEmail(email: string): Promise<User | null> {
-    return this.repository.findOneBy({ email });
+  async findByEmail(email: string): Promise<User | null> {
+    this.logger.debug('Finding user by email', { email });
+
+    const user = await this.repository.findOneBy({ email });
+
+    this.logger.debug('User lookup by email completed', {
+      email,
+      found: user !== null,
+      userId: user?.id
+    });
+
+    return user;
   }
 
-  findById(id: string): Promise<User | null> {
-    return this.repository.findOneBy({ id });
+  async findById(id: string): Promise<User | null> {
+    this.logger.debug('Finding user by id', { userId: id });
+
+    const user = await this.repository.findOneBy({ id });
+
+    this.logger.debug('User lookup by id completed', {
+      userId: id,
+      found: user !== null
+    });
+
+    return user;
   }
 }

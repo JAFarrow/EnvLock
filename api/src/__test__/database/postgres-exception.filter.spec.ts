@@ -1,4 +1,4 @@
-import { ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, HttpStatus, Logger } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 
 import { PostgresExceptionFilter } from '../../database/postgres-exception.filter';
@@ -41,6 +41,18 @@ function createQueryFailedError(code: string): QueryFailedError {
 }
 
 describe('PostgresExceptionFilter', () => {
+  let errorSpy: jest.SpyInstance;
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('maps unique violations to conflicts', () => {
     const filter = new PostgresExceptionFilter();
     const response = createResponse();
@@ -53,6 +65,10 @@ describe('PostgresExceptionFilter', () => {
       message: 'Resource already exists',
       error: 'Conflict'
     });
+    expect(warnSpy).toHaveBeenCalledWith('Postgres unique violation mapped to conflict response', {
+      code: '23505'
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it('maps unhandled query failures to internal server errors', () => {
@@ -66,6 +82,10 @@ describe('PostgresExceptionFilter', () => {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
       error: 'Internal Server Error'
+    });
+    expect(errorSpy).toHaveBeenCalledWith('Unhandled Postgres query failure', {
+      code: '23503',
+      message: 'query failed'
     });
   });
 });
