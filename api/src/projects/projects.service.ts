@@ -1,8 +1,7 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { type CreateProjectDto } from './contracts/create-project.dto';
-import { ProjectMembershipEntity } from './entities/project-membership.entity';
 import { ProjectMembershipsRepository } from './repositories/project-memberships.repository';
 import { ProjectRole } from './entities/project-role.enum';
 import {
@@ -11,6 +10,7 @@ import {
   toProjectResponse
 } from './contracts/project-response.dto';
 import { ProjectsRepository } from './repositories/projects.repository';
+import { ProjectAccessService } from './project-access.service';
 import { type UpdateProjectDto } from './contracts/update-project.dto';
 
 @Injectable()
@@ -18,7 +18,8 @@ export class ProjectsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly projectsRepository: ProjectsRepository,
-    private readonly projectMembershipsRepository: ProjectMembershipsRepository
+    private readonly projectMembershipsRepository: ProjectMembershipsRepository,
+    private readonly projectAccessService: ProjectAccessService
   ) {}
 
   async createProject(userId: string, input: CreateProjectDto): Promise<ProjectResponseDto> {
@@ -60,7 +61,10 @@ export class ProjectsService {
   }
 
   async getProject(userId: string, projectId: string): Promise<ProjectResponseDto> {
-    const membership = await this.findAccessibleActiveMembership(userId, projectId);
+    const membership = await this.projectAccessService.findAccessibleActiveMembership(
+      userId,
+      projectId
+    );
 
     return toProjectResponse(membership.project, membership.role);
   }
@@ -70,8 +74,11 @@ export class ProjectsService {
     projectId: string,
     input: UpdateProjectDto
   ): Promise<ProjectResponseDto> {
-    const membership = await this.findAccessibleActiveMembership(userId, projectId);
-    this.assertOwner(membership);
+    const membership = await this.projectAccessService.findAccessibleActiveMembership(
+      userId,
+      projectId
+    );
+    this.projectAccessService.assertOwner(membership);
 
     const project = membership.project;
 
@@ -93,32 +100,13 @@ export class ProjectsService {
   }
 
   async archiveProject(userId: string, projectId: string): Promise<void> {
-    const membership = await this.findAccessibleActiveMembership(userId, projectId);
-    this.assertOwner(membership);
+    const membership = await this.projectAccessService.findAccessibleActiveMembership(
+      userId,
+      projectId
+    );
+    this.projectAccessService.assertOwner(membership);
 
     membership.project.archivedAt = new Date();
     await this.projectsRepository.save(membership.project);
-  }
-
-  private async findAccessibleActiveMembership(
-    userId: string,
-    projectId: string
-  ): Promise<ProjectMembershipEntity> {
-    const membership = await this.projectMembershipsRepository.findActiveProjectByProjectAndUser(
-      projectId,
-      userId
-    );
-
-    if (membership === null) {
-      throw new NotFoundException('Project not found');
-    }
-
-    return membership;
-  }
-
-  private assertOwner(membership: ProjectMembershipEntity): void {
-    if (membership.role !== ProjectRole.OWNER) {
-      throw new ForbiddenException('Only project owners can perform this action');
-    }
   }
 }

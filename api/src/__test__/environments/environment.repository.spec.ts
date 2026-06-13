@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EntityManager, type Repository } from 'typeorm';
+import { type FindManyOptions, type FindOneOptions, type Repository } from 'typeorm';
 
 import { EnvironmentEntity } from '../../environments/entities/environment.entity';
 import {
@@ -12,10 +12,8 @@ import {
 type TypeOrmEnvironmentRepositoryMock = {
   create: jest.Mock<EnvironmentEntity, [Partial<EnvironmentEntity>]>;
   save: jest.Mock<Promise<EnvironmentEntity>, [EnvironmentEntity]>;
-};
-
-type EntityManagerMock = {
-  getRepository: jest.Mock<TypeOrmEnvironmentRepositoryMock, [typeof EnvironmentEntity]>;
+  find: jest.Mock<Promise<EnvironmentEntity[]>, [FindManyOptions<EnvironmentEntity>?]>;
+  findOne: jest.Mock<Promise<EnvironmentEntity | null>, [FindOneOptions<EnvironmentEntity>]>;
 };
 
 const environmentId = '7ea93715-1cc6-428d-937f-e7d8eec105dc';
@@ -45,6 +43,12 @@ function createTypeOrmRepository(): TypeOrmEnvironmentRepositoryMock {
     ),
     save: jest.fn<Promise<EnvironmentEntity>, [EnvironmentEntity]>((environment) =>
       Promise.resolve(environment)
+    ),
+    find: jest.fn<Promise<EnvironmentEntity[]>, [FindManyOptions<EnvironmentEntity>?]>(() =>
+      Promise.resolve([])
+    ),
+    findOne: jest.fn<Promise<EnvironmentEntity | null>, [FindOneOptions<EnvironmentEntity>]>(() =>
+      Promise.resolve(null)
     )
   };
 }
@@ -150,28 +154,46 @@ describe('EnvironmentRepository', () => {
     expect(logSpy).toHaveBeenCalledWith('Environment record saved', { environmentId });
   });
 
-  it('uses an entity manager repository when provided', async () => {
-    const managerRepository = createTypeOrmRepository();
-    const manager: EntityManagerMock = {
-      getRepository: jest.fn<TypeOrmEnvironmentRepositoryMock, [typeof EnvironmentEntity]>(() =>
-        managerRepository
-      )
-    };
+  it('finds active environments by project id ordered by creation time', async () => {
+    const environments = [createEnvironment()];
+    typeOrmRepository.find.mockResolvedValueOnce(environments);
 
-    await environmentRepository.create(
-      {
-        projectId,
-        name: 'Production',
-        slug: 'production',
-        createdByUserId: userId
-      },
-      manager as unknown as EntityManager
+    await expect(environmentRepository.findActiveByProjectId(projectId)).resolves.toBe(
+      environments
     );
 
-    expect(manager.getRepository).toHaveBeenCalledWith(EnvironmentEntity);
-    expect(managerRepository.create).toHaveBeenCalledTimes(1);
-    expect(managerRepository.save).toHaveBeenCalledTimes(1);
-    expect(typeOrmRepository.create).not.toHaveBeenCalled();
-    expect(typeOrmRepository.save).not.toHaveBeenCalled();
+    const findOptions = typeOrmRepository.find.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ projectId });
+    expect(findOptions?.where).toHaveProperty('archivedAt');
+    expect(findOptions?.order).toEqual({ createdAt: 'ASC' });
+  });
+
+  it('finds active environments using both project and environment ids', async () => {
+    const environment = createEnvironment();
+    typeOrmRepository.findOne.mockResolvedValueOnce(environment);
+
+    await expect(
+      environmentRepository.findActiveByProjectAndId(projectId, environmentId)
+    ).resolves.toBe(environment);
+
+    const findOptions = typeOrmRepository.findOne.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ id: environmentId, projectId });
+    expect(findOptions?.where).toHaveProperty('archivedAt');
+  });
+
+  it('finds active environments by project and slug', async () => {
+    const environment = createEnvironment({ slug: 'staging' });
+    typeOrmRepository.findOne.mockResolvedValueOnce(environment);
+
+    await expect(
+      environmentRepository.findActiveByProjectAndSlug(projectId, 'staging')
+    ).resolves.toBe(environment);
+
+    const findOptions = typeOrmRepository.findOne.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ projectId, slug: 'staging' });
+    expect(findOptions?.where).toHaveProperty('archivedAt');
   });
 });

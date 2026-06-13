@@ -12,6 +12,7 @@ import {
   type CreateProjectRecord,
   ProjectsRepository
 } from '../../projects/repositories/projects.repository';
+import { ProjectAccessService } from '../../projects/project-access.service';
 import { ProjectsService } from '../../projects/projects.service';
 
 type TransactionRunner = (manager: EntityManager) => Promise<unknown>;
@@ -111,7 +112,10 @@ describe('ProjectsService', () => {
     projectsService = new ProjectsService(
       dataSource as unknown as DataSource,
       projectsRepository as unknown as ProjectsRepository,
-      projectMembershipsRepository as unknown as ProjectMembershipsRepository
+      projectMembershipsRepository as unknown as ProjectMembershipsRepository,
+      new ProjectAccessService(
+        projectMembershipsRepository as unknown as ProjectMembershipsRepository
+      )
     );
   });
 

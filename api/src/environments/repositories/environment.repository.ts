@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { EnvironmentEntity } from '../entities/environment.entity';
 
@@ -21,10 +21,7 @@ export class EnvironmentRepository {
     private readonly repository: Repository<EnvironmentEntity>
   ) {}
 
-  async create(
-    input: CreateEnvironmentRecord,
-    manager?: EntityManager
-  ): Promise<EnvironmentEntity> {
+  async create(input: CreateEnvironmentRecord): Promise<EnvironmentEntity> {
     this.logger.debug('Creating environment record', {
       createdByUserId: input.createdByUserId,
       name: input.name,
@@ -32,8 +29,7 @@ export class EnvironmentRepository {
       slug: input.slug
     });
 
-    const repository = this.repositoryFor(manager);
-    const environment = repository.create({
+    const environment = this.repository.create({
       projectId: input.projectId,
       name: input.name,
       slug: input.slug,
@@ -42,7 +38,7 @@ export class EnvironmentRepository {
       archivedAt: null
     });
 
-    const savedEnvironment = await repository.save(environment);
+    const savedEnvironment = await this.repository.save(environment);
 
     this.logger.log('Environment record created', {
       environmentId: savedEnvironment.id,
@@ -53,20 +49,86 @@ export class EnvironmentRepository {
     return savedEnvironment;
   }
 
-  async save(
-    environment: EnvironmentEntity,
-    manager?: EntityManager
-  ): Promise<EnvironmentEntity> {
+  async save(environment: EnvironmentEntity): Promise<EnvironmentEntity> {
     this.logger.debug('Saving environment record', { environmentId: environment.id });
 
-    const savedEnvironment = await this.repositoryFor(manager).save(environment);
+    const savedEnvironment = await this.repository.save(environment);
 
     this.logger.log('Environment record saved', { environmentId: savedEnvironment.id });
 
     return savedEnvironment;
   }
 
-  private repositoryFor(manager?: EntityManager): Repository<EnvironmentEntity> {
-    return manager?.getRepository(EnvironmentEntity) ?? this.repository;
+  async findActiveByProjectId(projectId: string): Promise<EnvironmentEntity[]> {
+    this.logger.debug('Finding active environments by project id', { projectId });
+
+    const environments = await this.repository.find({
+      where: {
+        projectId,
+        archivedAt: IsNull()
+      },
+      order: {
+        createdAt: 'ASC'
+      }
+    });
+
+    this.logger.debug('Active environment lookup by project id completed', {
+      count: environments.length,
+      projectId
+    });
+
+    return environments;
+  }
+
+  async findActiveByProjectAndId(
+    projectId: string,
+    environmentId: string
+  ): Promise<EnvironmentEntity | null> {
+    this.logger.debug('Finding active environment by project and id', {
+      environmentId,
+      projectId
+    });
+
+    const environment = await this.repository.findOne({
+      where: {
+        id: environmentId,
+        projectId,
+        archivedAt: IsNull()
+      }
+    });
+
+    this.logger.debug('Active environment lookup by project and id completed', {
+      environmentId,
+      found: environment !== null,
+      projectId
+    });
+
+    return environment;
+  }
+
+  async findActiveByProjectAndSlug(
+    projectId: string,
+    slug: string
+  ): Promise<EnvironmentEntity | null> {
+    this.logger.debug('Finding active environment by project and slug', {
+      projectId,
+      slug
+    });
+
+    const environment = await this.repository.findOne({
+      where: {
+        projectId,
+        slug,
+        archivedAt: IsNull()
+      }
+    });
+
+    this.logger.debug('Active environment lookup by project and slug completed', {
+      found: environment !== null,
+      projectId,
+      slug
+    });
+
+    return environment;
   }
 }

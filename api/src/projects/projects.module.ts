@@ -6,12 +6,19 @@ import { ProjectMembershipEntity } from './entities/project-membership.entity';
 import { ProjectMembershipsRepository } from './repositories/project-memberships.repository';
 import { ProjectEntity } from './entities/project.entity';
 import { ProjectsController } from './projects.controller';
+import { ProjectAccessService } from './project-access.service';
 import { ProjectsRepository } from './repositories/projects.repository';
 import { ProjectsService } from './projects.service';
 
 @Module({
   imports: [AuthModule, TypeOrmModule.forFeature([ProjectEntity, ProjectMembershipEntity])],
   controllers: [ProjectsController],
-  providers: [ProjectsService, ProjectsRepository, ProjectMembershipsRepository]
+  providers: [
+    ProjectsService,
+    ProjectAccessService,
+    ProjectsRepository,
+    ProjectMembershipsRepository
+  ],
+  exports: [ProjectAccessService]
 })
 export class ProjectsModule {}

@@ -37,7 +37,9 @@ describe('UsersRepository', () => {
     typeOrmRepository = {
       create: jest.fn<UserEntity, [Partial<UserEntity>]>((input) => createUser(input)),
       save: jest.fn<Promise<UserEntity>, [UserEntity]>((user) => Promise.resolve(user)),
-      findOneBy: jest.fn<Promise<UserEntity | null>, [Partial<UserEntity>]>(() => Promise.resolve(null))
+      findOneBy: jest.fn<Promise<UserEntity | null>, [Partial<UserEntity>]>(() =>
+        Promise.resolve(null)
+      )
     };
 
     const module: TestingModule = await Test.createTestingModule({
