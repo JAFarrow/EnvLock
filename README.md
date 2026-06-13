@@ -21,7 +21,7 @@ npm ci
 
 ### Configure Environment
 
-The API requires a Postgres database URL. Other settings have development defaults.
+The API requires a Postgres database URL, JWT secret, and secret encryption key configuration. Other settings have development defaults.
 
 Supported environment variables:
 
@@ -31,11 +31,13 @@ Supported environment variables:
 - `DATABASE_URL`: Postgres connection URL; required
 - `JWT_SECRET`: secret used to sign API bearer tokens; required
 - `JWT_ACCESS_TOKEN_TTL_SECONDS`: access token lifetime in seconds; defaults to `3600`
+- `SECRET_ENCRYPTION_KEY_BASE64`: exactly 32 random bytes encoded as Base64; required
+- `SECRET_ENCRYPTION_KEY_VERSION`: positive integer version for the active secret encryption key; required
 
 Example:
 
 ```sh
-DATABASE_URL=postgres://envlock:envlock@localhost:5432/envlock JWT_SECRET=replace-me PORT=4000 LOG_FORMAT=json npm run dev:api
+DATABASE_URL=postgres://envlock:envlock@localhost:5432/envlock JWT_SECRET=replace-me SECRET_ENCRYPTION_KEY_BASE64=replace-with-generated-base64-key SECRET_ENCRYPTION_KEY_VERSION=1 PORT=4000 LOG_FORMAT=json npm run dev:api
 ```
 
 ### Run The API
