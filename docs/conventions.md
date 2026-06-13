@@ -65,6 +65,8 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 - Add or update tests when changing observable API behavior.
 - Prefer dependency injection over manual construction for framework-managed classes.
 - Use Nest's built-in `ConsoleLogger` for API logs; keep production logs single-line JSON for Render.
+- Keep TypeORM options centralized under `api/src/database` and add new entity classes to the shared entity list.
+- Keep domain entity files within their feature directory, such as `api/src/users`.
 
 ## Dependency Conventions
 

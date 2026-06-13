@@ -21,18 +21,19 @@ npm ci
 
 ### Configure Environment
 
-The API runs with defaults in development, so no local `.env` file is required.
+The API requires a Postgres database URL. Other settings have development defaults.
 
 Supported environment variables:
 
 - `NODE_ENV`: `development`, `test`, or `production`; defaults to `development`
 - `PORT`: API port; defaults to `3000`
 - `LOG_FORMAT`: `pretty` or `json`; defaults to `pretty` outside production and `json` in production
+- `DATABASE_URL`: Postgres connection URL; required
 
 Example:
 
 ```sh
-PORT=4000 LOG_FORMAT=json npm run dev:api
+DATABASE_URL=postgres://envlock:envlock@localhost:5432/envlock PORT=4000 LOG_FORMAT=json npm run dev:api
 ```
 
 ### Run The API

@@ -1,12 +1,22 @@
 import { ConsoleLogger, Module, type LogLevel } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EnvironmentVariables, validateEnvironment } from './config/environment';
+import { createTypeOrmOptions } from './database/typeorm.options';
+import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment })],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: createTypeOrmOptions
+    }),
+    UsersModule
+  ],
   controllers: [AppController],
   providers: [
     AppService,

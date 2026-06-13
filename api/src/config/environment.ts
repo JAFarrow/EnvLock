@@ -8,7 +8,8 @@ export const environmentSchema = z
   .looseObject({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
-    LOG_FORMAT: z.enum(appLogFormats).optional()
+    LOG_FORMAT: z.enum(appLogFormats).optional(),
+    DATABASE_URL: z.url().startsWith('postgres://').or(z.url().startsWith('postgresql://'))
   })
   .transform((config) => ({
     ...config,
