@@ -258,6 +258,18 @@ describe('ProjectsService', () => {
     expect(projectsRepository.save).not.toHaveBeenCalled();
   });
 
+  it('returns 403 when a maintainer updates a project', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.MAINTAINER })
+    );
+
+    await expect(
+      projectsService.updateProject(userId, projectId, { name: 'Updated API' })
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(projectsRepository.save).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when a non-member updates a project', async () => {
     await expect(
       projectsService.updateProject(otherUserId, projectId, { name: 'Updated API' })
@@ -280,6 +292,17 @@ describe('ProjectsService', () => {
   it('returns 403 when a non-owner member archives a project', async () => {
     projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
       createMembership({ role: ProjectRole.MAINTAINER })
+    );
+
+    await expect(projectsService.archiveProject(userId, projectId)).rejects.toBeInstanceOf(
+      ForbiddenException
+    );
+    expect(projectsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 when a developer archives a project', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.DEVELOPER })
     );
 
     await expect(projectsService.archiveProject(userId, projectId)).rejects.toBeInstanceOf(

@@ -13,7 +13,12 @@ import { SecretRepository } from './repositories/secret.repository';
 import { SecretsService } from './secrets.service';
 
 @Module({
-  imports: [AuthModule, EnvironmentsModule, ProjectsModule, TypeOrmModule.forFeature([SecretEntity])],
+  imports: [
+    AuthModule,
+    EnvironmentsModule,
+    ProjectsModule,
+    TypeOrmModule.forFeature([SecretEntity])
+  ],
   controllers: [SecretsController],
   providers: [
     SecretsService,

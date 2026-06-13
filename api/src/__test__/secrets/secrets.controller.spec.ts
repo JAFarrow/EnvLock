@@ -17,10 +17,7 @@ import { SecretsService } from '../../secrets/secrets.service';
 type SecretsServiceMock = {
   create: jest.Mock<Promise<SecretResponseDto>, [string, string, string, CreateSecretDto]>;
   findAll: jest.Mock<Promise<SecretListResponseDto>, [string, string, string]>;
-  update: jest.Mock<
-    Promise<SecretResponseDto>,
-    [string, string, string, string, UpdateSecretDto]
-  >;
+  update: jest.Mock<Promise<SecretResponseDto>, [string, string, string, string, UpdateSecretDto]>;
   archive: jest.Mock<Promise<void>, [string, string, string, string]>;
 };
 
@@ -104,11 +101,11 @@ describe('SecretsController', () => {
   });
 
   it('lists secret metadata for the authenticated user', async () => {
-    await expect(secretsController.findAll(createRequest(), projectId, environmentId)).resolves.toEqual(
-      {
-        items: [secretResponse]
-      }
-    );
+    await expect(
+      secretsController.findAll(createRequest(), projectId, environmentId)
+    ).resolves.toEqual({
+      items: [secretResponse]
+    });
 
     expect(secretsService.findAll).toHaveBeenCalledWith(userId, projectId, environmentId);
   });
@@ -121,16 +118,10 @@ describe('SecretsController', () => {
       })
     ).resolves.toMatchObject({ key: 'PRIMARY_DATABASE_URL' });
 
-    expect(secretsService.update).toHaveBeenCalledWith(
-      userId,
-      projectId,
-      environmentId,
-      secretId,
-      {
-        key: 'PRIMARY_DATABASE_URL',
-        value: ''
-      }
-    );
+    expect(secretsService.update).toHaveBeenCalledWith(userId, projectId, environmentId, secretId, {
+      key: 'PRIMARY_DATABASE_URL',
+      value: ''
+    });
   });
 
   it('archives secrets for the authenticated user', async () => {
@@ -146,8 +137,12 @@ describe('SecretsController', () => {
 
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
-    await request(server).post(`/projects/${projectId}/environments/${environmentId}/secrets`).expect(401);
-    await request(server).get(`/projects/${projectId}/environments/${environmentId}/secrets`).expect(401);
+    await request(server)
+      .post(`/projects/${projectId}/environments/${environmentId}/secrets`)
+      .expect(401);
+    await request(server)
+      .get(`/projects/${projectId}/environments/${environmentId}/secrets`)
+      .expect(401);
     await request(server)
       .patch(`/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
       .expect(401);

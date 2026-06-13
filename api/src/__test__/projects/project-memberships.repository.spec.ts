@@ -13,6 +13,7 @@ interface MembershipQueryBuilderMock {
   where: jest.Mock<MembershipQueryBuilderMock, [string, Record<string, string>]>;
   andWhere: jest.Mock<MembershipQueryBuilderMock, [string, Record<string, string>?]>;
   orderBy: jest.Mock<MembershipQueryBuilderMock, [string, 'ASC' | 'DESC']>;
+  addOrderBy: jest.Mock<MembershipQueryBuilderMock, [string, 'ASC' | 'DESC']>;
   getMany: jest.Mock<Promise<ProjectMembershipEntity[]>, []>;
   getOne: jest.Mock<Promise<ProjectMembershipEntity | null>, []>;
 }
@@ -20,6 +21,7 @@ interface MembershipQueryBuilderMock {
 type TypeOrmMembershipRepositoryMock = {
   create: jest.Mock<ProjectMembershipEntity, [Partial<ProjectMembershipEntity>]>;
   save: jest.Mock<Promise<ProjectMembershipEntity>, [ProjectMembershipEntity]>;
+  remove: jest.Mock<Promise<ProjectMembershipEntity>, [ProjectMembershipEntity]>;
   createQueryBuilder: jest.Mock<MembershipQueryBuilderMock, [string]>;
 };
 
@@ -61,6 +63,7 @@ function createQueryBuilder(memberships: ProjectMembershipEntity[]): MembershipQ
     where: jest.fn<MembershipQueryBuilderMock, [string, Record<string, string>]>(),
     andWhere: jest.fn<MembershipQueryBuilderMock, [string, Record<string, string>?]>(),
     orderBy: jest.fn<MembershipQueryBuilderMock, [string, 'ASC' | 'DESC']>(),
+    addOrderBy: jest.fn<MembershipQueryBuilderMock, [string, 'ASC' | 'DESC']>(),
     getMany: jest.fn<Promise<ProjectMembershipEntity[]>, []>(() => Promise.resolve(memberships)),
     getOne: jest.fn<Promise<ProjectMembershipEntity | null>, []>(() =>
       Promise.resolve(memberships[0] ?? null)
@@ -71,6 +74,7 @@ function createQueryBuilder(memberships: ProjectMembershipEntity[]): MembershipQ
   queryBuilder.where.mockReturnValue(queryBuilder);
   queryBuilder.andWhere.mockReturnValue(queryBuilder);
   queryBuilder.orderBy.mockReturnValue(queryBuilder);
+  queryBuilder.addOrderBy.mockReturnValue(queryBuilder);
 
   return queryBuilder;
 }
@@ -90,6 +94,9 @@ describe('ProjectMembershipsRepository', () => {
         Object.assign(createMembership(), input)
       ),
       save: jest.fn<Promise<ProjectMembershipEntity>, [ProjectMembershipEntity]>((membership) =>
+        Promise.resolve(membership)
+      ),
+      remove: jest.fn<Promise<ProjectMembershipEntity>, [ProjectMembershipEntity]>((membership) =>
         Promise.resolve(membership)
       ),
       createQueryBuilder: jest.fn<MembershipQueryBuilderMock, [string]>(() => queryBuilder)
@@ -134,5 +141,43 @@ describe('ProjectMembershipsRepository', () => {
     });
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('membership.userId = :userId', { userId });
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('project.archivedAt IS NULL');
+  });
+
+  it('finds one project membership by project and user with the user relation', async () => {
+    await expect(repository.findByProjectAndUser(projectId, userId)).resolves.toEqual(
+      expect.objectContaining({ userId, projectId })
+    );
+
+    expect(queryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('membership.user', 'user');
+    expect(queryBuilder.where).toHaveBeenCalledWith('membership.projectId = :projectId', {
+      projectId
+    });
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith('membership.userId = :userId', { userId });
+  });
+
+  it('lists project memberships with users in deterministic order', async () => {
+    await expect(repository.findByProjectWithUsers(projectId)).resolves.toEqual([
+      expect.objectContaining({ userId, projectId })
+    ]);
+
+    expect(queryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('membership.user', 'user');
+    expect(queryBuilder.where).toHaveBeenCalledWith('membership.projectId = :projectId', {
+      projectId
+    });
+    expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+      "CASE membership.role WHEN 'owner' THEN 1 WHEN 'maintainer' THEN 2 WHEN 'developer' THEN 3 ELSE 4 END",
+      'ASC'
+    );
+    expect(queryBuilder.addOrderBy).toHaveBeenCalledWith('user.email', 'ASC');
+  });
+
+  it('saves and removes memberships through TypeORM', async () => {
+    const membership = createMembership();
+
+    await expect(repository.save(membership)).resolves.toBe(membership);
+    await expect(repository.remove(membership)).resolves.toBeUndefined();
+
+    expect(typeOrmRepository.save).toHaveBeenCalledWith(membership);
+    expect(typeOrmRepository.remove).toHaveBeenCalledWith(membership);
   });
 });

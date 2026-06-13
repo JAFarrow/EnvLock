@@ -95,6 +95,68 @@ export class ProjectMembershipsRepository {
     return membership;
   }
 
+  async findByProjectAndUser(
+    projectId: string,
+    userId: string,
+    manager?: EntityManager
+  ): Promise<ProjectMembershipEntity | null> {
+    this.logger.debug('Finding project membership by project and user', {
+      projectId,
+      userId
+    });
+
+    const membership = await this.repositoryFor(manager)
+      .createQueryBuilder('membership')
+      .innerJoinAndSelect('membership.user', 'user')
+      .where('membership.projectId = :projectId', { projectId })
+      .andWhere('membership.userId = :userId', { userId })
+      .getOne();
+
+    this.logger.debug('Project membership lookup by project and user completed', {
+      found: membership !== null,
+      projectId,
+      userId
+    });
+
+    return membership;
+  }
+
+  async findByProjectWithUsers(
+    projectId: string,
+    manager?: EntityManager
+  ): Promise<ProjectMembershipEntity[]> {
+    this.logger.debug('Finding project memberships with users by project id', { projectId });
+
+    const memberships = await this.repositoryFor(manager)
+      .createQueryBuilder('membership')
+      .innerJoinAndSelect('membership.user', 'user')
+      .where('membership.projectId = :projectId', { projectId })
+      .orderBy(
+        "CASE membership.role WHEN 'owner' THEN 1 WHEN 'maintainer' THEN 2 WHEN 'developer' THEN 3 ELSE 4 END",
+        'ASC'
+      )
+      .addOrderBy('user.email', 'ASC')
+      .getMany();
+
+    this.logger.debug('Project memberships with users lookup completed', {
+      count: memberships.length,
+      projectId
+    });
+
+    return memberships;
+  }
+
+  async save(
+    membership: ProjectMembershipEntity,
+    manager?: EntityManager
+  ): Promise<ProjectMembershipEntity> {
+    return this.repositoryFor(manager).save(membership);
+  }
+
+  async remove(membership: ProjectMembershipEntity, manager?: EntityManager): Promise<void> {
+    await this.repositoryFor(manager).remove(membership);
+  }
+
   private repositoryFor(manager?: EntityManager): Repository<ProjectMembershipEntity> {
     return manager?.getRepository(ProjectMembershipEntity) ?? this.repository;
   }

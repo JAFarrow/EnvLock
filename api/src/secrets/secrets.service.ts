@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 
 import { EnvironmentRepository } from '../environments/repositories/environment.repository';
@@ -10,10 +6,7 @@ import { ProjectAccessService } from '../projects/project-access.service';
 import { type CreateSecretDto } from './contracts/create-secret.dto';
 import { type UpdateSecretDto } from './contracts/update-secret.dto';
 import { type SecretListResponseDto } from './contracts/secret-list.response.dto';
-import {
-  type SecretResponseDto,
-  toSecretResponse
-} from './contracts/secret.response.dto';
+import { type SecretResponseDto, toSecretResponse } from './contracts/secret.response.dto';
 import { SecretEncryptionService } from './encryption/secret-encryption.service';
 import { SecretEntity } from './entities/secret.entity';
 import { SecretRepository } from './repositories/secret.repository';
@@ -142,7 +135,10 @@ export class SecretsService {
   }
 
   private async findActiveSecret(environmentId: string, secretId: string): Promise<SecretEntity> {
-    const secret = await this.secretRepository.findActiveByEnvironmentAndId(environmentId, secretId);
+    const secret = await this.secretRepository.findActiveByEnvironmentAndId(
+      environmentId,
+      secretId
+    );
 
     if (secret === null) {
       throw new NotFoundException('Secret not found');
@@ -158,5 +154,4 @@ export class SecretsService {
       throw new InternalServerErrorException('Unable to process secret');
     }
   }
-
 }

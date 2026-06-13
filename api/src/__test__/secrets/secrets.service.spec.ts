@@ -41,7 +41,7 @@ type SecretRepositoryMock = {
 
 type SecretEncryptionServiceMock = {
   encrypt: jest.Mock<EncryptedSecretPayload, [string, { secretId: string; environmentId: string }]>;
-  decrypt: jest.Mock<string, [EncryptedSecretPayload, { secretId: string; environmentId: string }]>
+  decrypt: jest.Mock<string, [EncryptedSecretPayload, { secretId: string; environmentId: string }]>;
 };
 
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
@@ -68,7 +68,9 @@ function createProject(overrides: Partial<ProjectEntity> = {}): ProjectEntity {
   });
 }
 
-function createMembership(overrides: Partial<ProjectMembershipEntity> = {}): ProjectMembershipEntity {
+function createMembership(
+  overrides: Partial<ProjectMembershipEntity> = {}
+): ProjectMembershipEntity {
   const project = overrides.project ?? createProject();
 
   return Object.assign(new ProjectMembershipEntity(), {
@@ -163,12 +165,14 @@ describe('SecretsService', () => {
       )
     };
     secretEncryptionService = {
-      encrypt: jest.fn<EncryptedSecretPayload, [string, { secretId: string; environmentId: string }]>(
-        () => createEncryptedPayload()
-      ),
-      decrypt: jest.fn<string, [EncryptedSecretPayload, { secretId: string; environmentId: string }]>(
-        () => plaintext
-      )
+      encrypt: jest.fn<
+        EncryptedSecretPayload,
+        [string, { secretId: string; environmentId: string }]
+      >(() => createEncryptedPayload()),
+      decrypt: jest.fn<
+        string,
+        [EncryptedSecretPayload, { secretId: string; environmentId: string }]
+      >(() => plaintext)
     };
 
     secretsService = new SecretsService(
@@ -188,7 +192,7 @@ describe('SecretsService', () => {
         value: plaintext
       })
     ).resolves.toEqual({
-      id: expect.any(String),
+      id: expect.any(String) as string,
       environmentId,
       key: 'DATABASE_URL',
       createdAt: '2026-06-13T14:00:00.000Z',
@@ -295,7 +299,9 @@ describe('SecretsService', () => {
     });
 
     expect(secretRepository.create.mock.calls[0]?.[0]).not.toHaveProperty('value');
-    expect(secretRepository.create.mock.calls[0]?.[0].encryptedValue.toString()).not.toBe(plaintext);
+    expect(secretRepository.create.mock.calls[0]?.[0].encryptedValue.toString()).not.toBe(
+      plaintext
+    );
   });
 
   it('allows a project member to list metadata', async () => {
@@ -364,6 +370,20 @@ describe('SecretsService', () => {
     ).resolves.toMatchObject({ key: 'PRIMARY_DATABASE_URL' });
   });
 
+  it('returns 403 when a developer updates a secret', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.DEVELOPER })
+    );
+
+    await expect(
+      secretsService.update(userId, projectId, environmentId, secretId, {
+        key: 'PRIMARY_DATABASE_URL'
+      })
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(secretRepository.save).not.toHaveBeenCalled();
+  });
+
   it('encrypts a supplied replacement value', async () => {
     const secret = createSecret();
     secretRepository.findActiveByEnvironmentAndId.mockResolvedValueOnce(secret);
@@ -422,6 +442,18 @@ describe('SecretsService', () => {
     await expect(
       secretsService.archive(userId, projectId, environmentId, secretId)
     ).resolves.toBeUndefined();
+  });
+
+  it('returns 403 when a developer archives a secret', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.DEVELOPER })
+    );
+
+    await expect(
+      secretsService.archive(userId, projectId, environmentId, secretId)
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(secretRepository.save).not.toHaveBeenCalled();
   });
 
   it('does not decrypt the value while archiving', async () => {

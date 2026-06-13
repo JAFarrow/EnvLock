@@ -55,10 +55,7 @@ export class PostgresExceptionFilter implements ExceptionFilter<QueryFailedError
   }
 }
 
-function getHandledPostgresError(
-  code: unknown,
-  constraint: unknown
-): ErrorResponseBody | null {
+function getHandledPostgresError(code: unknown, constraint: unknown): ErrorResponseBody | null {
   if (code === POSTGRES_UNIQUE_VIOLATION) {
     return {
       statusCode: HttpStatus.CONFLICT,

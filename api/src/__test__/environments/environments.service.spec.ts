@@ -401,4 +401,31 @@ describe('EnvironmentsService', () => {
     expect(environment.archivedAt).toBeInstanceOf(Date);
     expect(environmentRepository.save).toHaveBeenCalledWith(environment);
   });
+
+  it('allows a maintainer to archive an environment', async () => {
+    const environment = createEnvironment();
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.MAINTAINER })
+    );
+    environmentRepository.findActiveByProjectAndId.mockResolvedValueOnce(environment);
+
+    await expect(
+      environmentsService.archiveEnvironment(userId, projectId, environmentId)
+    ).resolves.toBeUndefined();
+
+    expect(environment.archivedAt).toBeInstanceOf(Date);
+    expect(environmentRepository.save).toHaveBeenCalledWith(environment);
+  });
+
+  it('returns 403 when a developer archives an environment', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.DEVELOPER })
+    );
+
+    await expect(
+      environmentsService.archiveEnvironment(userId, projectId, environmentId)
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(environmentRepository.save).not.toHaveBeenCalled();
+  });
 });

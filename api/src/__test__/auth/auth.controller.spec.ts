@@ -72,5 +72,4 @@ describe('AuthController', () => {
       password: 'long-password'
     });
   });
-
 });
