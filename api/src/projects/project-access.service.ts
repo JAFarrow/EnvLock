@@ -29,4 +29,10 @@ export class ProjectAccessService {
       throw new ForbiddenException('Only project owners can perform this action');
     }
   }
+
+  assertEnvironmentManager(membership: ProjectMembershipEntity): void {
+    if (membership.role !== ProjectRole.OWNER && membership.role !== ProjectRole.MAINTAINER) {
+      throw new ForbiddenException('Only project owners and maintainers can perform this action');
+    }
+  }
 }

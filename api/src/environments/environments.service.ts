@@ -26,7 +26,7 @@ export class EnvironmentsService {
       userId,
       projectId
     );
-    this.projectAccessService.assertOwner(membership);
+    this.projectAccessService.assertEnvironmentManager(membership);
     await this.assertSlugAvailable(projectId, input.slug);
 
     const environment = await this.environmentRepository.create({
@@ -79,7 +79,7 @@ export class EnvironmentsService {
       userId,
       projectId
     );
-    this.projectAccessService.assertOwner(membership);
+    this.projectAccessService.assertEnvironmentManager(membership);
 
     const environment = await this.environmentRepository.findActiveByProjectAndId(
       projectId,
@@ -117,7 +117,7 @@ export class EnvironmentsService {
       userId,
       projectId
     );
-    this.projectAccessService.assertOwner(membership);
+    this.projectAccessService.assertEnvironmentManager(membership);
 
     const environment = await this.environmentRepository.findActiveByProjectAndId(
       projectId,

@@ -177,7 +177,7 @@ describe('EnvironmentsService', () => {
     expect(environmentRepository.create).not.toHaveBeenCalled();
   });
 
-  it('does not grant maintainer create permissions', async () => {
+  it('allows a maintainer to create an environment', async () => {
     projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
       createMembership({ role: ProjectRole.MAINTAINER })
     );
@@ -187,7 +187,15 @@ describe('EnvironmentsService', () => {
         name: 'Production',
         slug: 'production'
       })
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).resolves.toMatchObject({ projectId, slug: 'production' });
+
+    expect(environmentRepository.create).toHaveBeenCalledWith({
+      projectId,
+      name: 'Production',
+      slug: 'production',
+      description: null,
+      createdByUserId: userId
+    });
   });
 
   it('returns 404 when a non-member creates an environment', async () => {
@@ -348,6 +356,23 @@ describe('EnvironmentsService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
 
     expect(environmentRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('allows a maintainer to update environment metadata', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      createMembership({ role: ProjectRole.MAINTAINER })
+    );
+    environmentRepository.findActiveByProjectAndId.mockResolvedValueOnce(createEnvironment());
+
+    await expect(
+      environmentsService.updateEnvironment(userId, projectId, environmentId, {
+        name: 'Production EU'
+      })
+    ).resolves.toMatchObject({ name: 'Production EU' });
+
+    expect(environmentRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Production EU' })
+    );
   });
 
   it('returns 409 when updating to a conflicting slug', async () => {
