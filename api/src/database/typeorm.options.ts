@@ -11,6 +11,6 @@ export function createTypeOrmOptions(
     type: 'postgres',
     url: configService.get('DATABASE_URL', { infer: true }),
     entities: databaseEntities,
-    synchronize: configService.get('NODE_ENV', { infer: true }) !== 'production'
+    synchronize: false
   };
 }

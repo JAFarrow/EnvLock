@@ -11,6 +11,7 @@ import { PostgresExceptionFilter } from './database/postgres-exception.filter';
 import { createTypeOrmOptions } from './database/typeorm.options';
 import { EnvironmentsModule } from './environments/environments.module';
 import { ProjectsModule } from './projects/projects.module';
+import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { ProjectsModule } from './projects/projects.module';
     }),
     AuthModule,
     EnvironmentsModule,
-    ProjectsModule
+    ProjectsModule,
+    SecretsModule
   ],
   controllers: [AppController],
   providers: [
