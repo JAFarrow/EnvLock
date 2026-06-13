@@ -1,12 +1,10 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
-  Logger,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -14,32 +12,29 @@ import {
   Req,
   UseGuards
 } from '@nestjs/common';
-import { ZodError, type ZodType } from 'zod';
 
 import { type AuthenticatedRequest } from '../auth/contracts/authenticated-request';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { createProjectSchema } from './contracts/create-project.dto';
+import { ZodValidationPipe } from '../pipes/zod-validation.pipe';
+import { createProjectSchema, type CreateProjectDto } from './contracts/create-project.dto';
 import {
   type ProjectListResponseDto,
   type ProjectResponseDto
 } from './contracts/project-response.dto';
 import { ProjectsService } from './projects.service';
-import { updateProjectSchema } from './contracts/update-project.dto';
+import { updateProjectSchema, type UpdateProjectDto } from './contracts/update-project.dto';
 
 @Controller('projects')
 @UseGuards(JwtAuthGuard)
 export class ProjectsController {
-  private readonly logger = new Logger(ProjectsController.name);
-
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
   createProject(
     @Req() request: AuthenticatedRequest,
-    @Body() body: unknown
+    @Body(new ZodValidationPipe(createProjectSchema, 'Invalid create project request'))
+    input: CreateProjectDto
   ): Promise<ProjectResponseDto> {
-    const input = this.parseBody(createProjectSchema, body, 'Invalid create project request');
-
     return this.projectsService.createProject(request.user.id, input);
   }
 
@@ -60,10 +55,9 @@ export class ProjectsController {
   updateProject(
     @Req() request: AuthenticatedRequest,
     @Param('projectId', new ParseUUIDPipe()) projectId: string,
-    @Body() body: unknown
+    @Body(new ZodValidationPipe(updateProjectSchema, 'Invalid update project request'))
+    input: UpdateProjectDto
   ): Promise<ProjectResponseDto> {
-    const input = this.parseBody(updateProjectSchema, body, 'Invalid update project request');
-
     return this.projectsService.updateProject(request.user.id, projectId, input);
   }
 
@@ -74,32 +68,5 @@ export class ProjectsController {
     @Param('projectId', new ParseUUIDPipe()) projectId: string
   ): Promise<void> {
     return this.projectsService.archiveProject(request.user.id, projectId);
-  }
-
-  private parseBody<T>(schema: ZodType<T>, body: unknown, message: string): T {
-    const result = schema.safeParse(body);
-
-    if (!result.success) {
-      const errors = this.formatZodErrors(result.error);
-
-      this.logger.warn('Project request validation failed', {
-        fields: errors.map((error) => error.path),
-        issueCount: errors.length
-      });
-
-      throw new BadRequestException({
-        message,
-        errors
-      });
-    }
-
-    return result.data;
-  }
-
-  private formatZodErrors(error: ZodError): { path: string; message: string }[] {
-    return error.issues.map((issue) => ({
-      path: issue.path.join('.'),
-      message: issue.message
-    }));
   }
 }

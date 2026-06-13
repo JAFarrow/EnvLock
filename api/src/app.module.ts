@@ -7,9 +7,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { EnvironmentVariables, validateEnvironment } from './config/environment';
-import { PostgresExceptionFilter } from './database/postgres-exception.filter';
 import { createTypeOrmOptions } from './database/typeorm.options';
 import { EnvironmentsModule } from './environments/environments.module';
+import { PostgresExceptionFilter } from './filters/postgres-exception.filter';
 import { ProjectsModule } from './projects/projects.module';
 import { SecretsModule } from './secrets/secrets.module';
 

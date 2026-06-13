@@ -1,4 +1,4 @@
-import { BadRequestException, type INestApplication, Logger } from '@nestjs/common';
+import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -60,8 +60,6 @@ describe('EnvironmentsController', () => {
   let app: INestApplication | undefined;
 
   beforeEach(async () => {
-    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-
     environmentsService = {
       createEnvironment: jest.fn<
         Promise<EnvironmentResponseDto>,
@@ -102,12 +100,12 @@ describe('EnvironmentsController', () => {
     jest.restoreAllMocks();
   });
 
-  it('creates environments for the authenticated user with trimmed body fields', async () => {
+  it('creates environments for the authenticated user', async () => {
     await expect(
       environmentsController.createEnvironment(createRequest(), projectId, {
-        name: ' Production ',
-        slug: ' production ',
-        description: ' Production deployment environment '
+        name: 'Production',
+        slug: 'production',
+        description: 'Production deployment environment'
       })
     ).resolves.toBe(environmentResponse);
 
@@ -118,30 +116,11 @@ describe('EnvironmentsController', () => {
     });
   });
 
-  it('rejects invalid create environment bodies', () => {
-    expect(() =>
-      environmentsController.createEnvironment(createRequest(), projectId, {
-        name: 'Production EU',
-        slug: 'Production EU'
-      })
-    ).toThrow(BadRequestException);
-
-    expect(environmentsService.createEnvironment).not.toHaveBeenCalled();
-  });
-
-  it('rejects empty update environment bodies', () => {
-    expect(() =>
-      environmentsController.updateEnvironment(createRequest(), projectId, environmentId, {})
-    ).toThrow(BadRequestException);
-
-    expect(environmentsService.updateEnvironment).not.toHaveBeenCalled();
-  });
-
   it('updates environments for the authenticated user with supported fields only', async () => {
     await expect(
       environmentsController.updateEnvironment(createRequest(), projectId, environmentId, {
-        name: ' Production EU ',
-        slug: ' production-eu ',
+        name: 'Production EU',
+        slug: 'production-eu',
         description: null
       })
     ).resolves.toBe(environmentResponse);

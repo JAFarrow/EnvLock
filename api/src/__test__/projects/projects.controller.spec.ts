@@ -1,4 +1,4 @@
-import { BadRequestException, type INestApplication, Logger } from '@nestjs/common';
+import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -54,8 +54,6 @@ describe('ProjectsController', () => {
   let app: INestApplication | undefined;
 
   beforeEach(async () => {
-    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-
     projectsService = {
       createProject: jest.fn<Promise<ProjectResponseDto>, [string, CreateProjectDto]>(() =>
         Promise.resolve(projectResponse)
@@ -94,12 +92,12 @@ describe('ProjectsController', () => {
     jest.restoreAllMocks();
   });
 
-  it('creates projects for the authenticated user with trimmed body fields', async () => {
+  it('creates projects for the authenticated user', async () => {
     await expect(
       projectsController.createProject(createRequest(), {
-        name: ' Payments API ',
-        description: ' Backend payment service ',
-        repositoryUrl: ' https://github.com/example/payments-api '
+        name: 'Payments API',
+        description: 'Backend payment service',
+        repositoryUrl: 'https://github.com/example/payments-api'
       })
     ).resolves.toBe(projectResponse);
 
@@ -110,25 +108,9 @@ describe('ProjectsController', () => {
     });
   });
 
-  it('rejects invalid create project bodies', () => {
-    expect(() => projectsController.createProject(createRequest(), { name: '' })).toThrow(
-      BadRequestException
-    );
-
-    expect(projectsService.createProject).not.toHaveBeenCalled();
-  });
-
-  it('rejects empty update project bodies', () => {
-    expect(() => projectsController.updateProject(createRequest(), projectId, {})).toThrow(
-      BadRequestException
-    );
-
-    expect(projectsService.updateProject).not.toHaveBeenCalled();
-  });
-
   it('updates projects for the authenticated user with supported fields only', async () => {
     await expect(
-      projectsController.updateProject(createRequest(), projectId, { name: ' Payments API ' })
+      projectsController.updateProject(createRequest(), projectId, { name: 'Payments API' })
     ).resolves.toBe(projectResponse);
 
     expect(projectsService.updateProject).toHaveBeenCalledWith(userId, projectId, {

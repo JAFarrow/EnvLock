@@ -7,10 +7,12 @@ import { databaseEntities } from './entities';
 export function createTypeOrmOptions(
   configService: ConfigService<EnvironmentVariables, true>
 ): TypeOrmModuleOptions {
+  const nodeEnv = configService.get('NODE_ENV', { infer: true });
+
   return {
     type: 'postgres',
     url: configService.get('DATABASE_URL', { infer: true }),
     entities: databaseEntities,
-    synchronize: false
+    synchronize: nodeEnv !== 'production'
   };
 }

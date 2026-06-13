@@ -8,11 +8,11 @@ import {
   type Repository
 } from 'typeorm';
 
-import { SecretEntity } from '../../secrets/persistence/entities/secret.entity';
+import { SecretEntity } from '../../secrets/entities/secret.entity';
 import {
   type CreateSecretRecord,
   SecretRepository
-} from '../../secrets/persistence/repositories/secret.repository';
+} from '../../secrets/repositories/secret.repository';
 
 type TypeOrmSecretRepositoryMock = {
   create: jest.Mock<SecretEntity, [Partial<SecretEntity>]>;

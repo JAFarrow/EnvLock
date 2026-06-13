@@ -10,8 +10,8 @@ import {
   UpdateDateColumn
 } from 'typeorm';
 
-import { EnvironmentEntity } from '../../../environments/entities/environment.entity';
-import { UserEntity } from '../../../users/entities/user.entity';
+import { EnvironmentEntity } from '../../environments/entities/environment.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity({ name: 'secrets' })
 @Check('chk_secrets_secret_key_format', `"secret_key" ~ '^[A-Z_][A-Z0-9_]*$'`)

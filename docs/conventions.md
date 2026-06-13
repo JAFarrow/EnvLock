@@ -60,11 +60,13 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 - Do not read `process.env` directly in application code.
 - Keep `ConfigModule.forRoot({ isGlobal: true })` in the root API module unless the app later needs a more explicit module boundary.
 - Keep controllers thin. Put business logic in services.
+- Validate controller request bodies with `ZodValidationPipe`; do not duplicate Zod `safeParse` handling inside controllers.
 - Keep API tests under `api/src/__test__`.
 - Production builds exclude `*.spec.ts`; keep test files named with the `.spec.ts` suffix.
 - Add or update tests when changing observable API behavior.
 - Prefer dependency injection over manual construction for framework-managed classes.
 - Where possible, use Nest exception filters for cross-cutting exception-to-HTTP response mapping rather than handling infrastructure errors inside services.
+- When a database failure is expected and should produce a stable HTTP response, update `PostgresExceptionFilter` instead of catching TypeORM errors in feature services.
 - Use Nest's built-in `ConsoleLogger` for API logs; keep production logs single-line JSON for Render.
 - Keep TypeORM options centralized under `api/src/database` and add new entity classes to the shared entity list.
 - Organize API code by feature under `api/src/<feature>`.

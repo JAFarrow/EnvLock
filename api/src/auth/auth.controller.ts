@@ -1,60 +1,26 @@
-import { BadRequestException, Body, Controller, Logger, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 
 import { AuthService, type LoginResult, type RegisteredUser } from './auth.service';
-import { loginUserSchema } from './contracts/login-user.schema';
-import { registerUserSchema } from './contracts/register-user.schema';
+import { loginUserSchema, type LoginUserInput } from './contracts/login-user.schema';
+import { registerUserSchema, type RegisterUserInput } from './contracts/register-user.schema';
+import { ZodValidationPipe } from '../pipes/zod-validation.pipe';
 
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
-
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(@Body() body: unknown): Promise<RegisteredUser> {
-    const result = registerUserSchema.safeParse(body);
-
-    if (!result.success) {
-      const errors = result.error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message
-      }));
-
-      this.logger.warn('Registration request validation failed', {
-        fields: errors.map((error) => error.path),
-        issueCount: errors.length
-      });
-
-      throw new BadRequestException({
-        message: 'Invalid registration request',
-        errors
-      });
-    }
-
-    return this.authService.register(result.data);
+  register(
+    @Body(new ZodValidationPipe(registerUserSchema, 'Invalid registration request'))
+    input: RegisterUserInput
+  ): Promise<RegisteredUser> {
+    return this.authService.register(input);
   }
 
   @Post('login')
-  login(@Body() body: unknown): Promise<LoginResult> {
-    const result = loginUserSchema.safeParse(body);
-
-    if (!result.success) {
-      const errors = result.error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message
-      }));
-
-      this.logger.warn('Login request validation failed', {
-        fields: errors.map((error) => error.path),
-        issueCount: errors.length
-      });
-
-      throw new BadRequestException({
-        message: 'Invalid login request',
-        errors
-      });
-    }
-
-    return this.authService.login(result.data);
+  login(
+    @Body(new ZodValidationPipe(loginUserSchema, 'Invalid login request')) input: LoginUserInput
+  ): Promise<LoginResult> {
+    return this.authService.login(input);
   }
 }
