@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
-import { ProjectEntity } from './project.entity';
+import { ProjectEntity } from '../entities/project.entity';
 
 export interface CreateProjectRecord {
   name: string;
@@ -19,13 +19,14 @@ export class ProjectsRepository {
     @InjectRepository(ProjectEntity) private readonly repository: Repository<ProjectEntity>
   ) {}
 
-  async create(input: CreateProjectRecord): Promise<ProjectEntity> {
+  async create(input: CreateProjectRecord, manager?: EntityManager): Promise<ProjectEntity> {
     this.logger.debug('Creating project record', {
       createdByUserId: input.createdByUserId,
       name: input.name
     });
 
-    const project = this.repository.create({
+    const repository = this.repositoryFor(manager);
+    const project = repository.create({
       name: input.name,
       description: input.description ?? null,
       repositoryUrl: input.repositoryUrl ?? null,
@@ -33,7 +34,7 @@ export class ProjectsRepository {
       archivedAt: null
     });
 
-    const savedProject = await this.repository.save(project);
+    const savedProject = await repository.save(project);
 
     this.logger.log('Project record created', {
       createdByUserId: savedProject.createdByUserId,
@@ -43,29 +44,17 @@ export class ProjectsRepository {
     return savedProject;
   }
 
-  async findById(id: string): Promise<ProjectEntity | null> {
-    this.logger.debug('Finding project by id', { projectId: id });
+  async save(project: ProjectEntity, manager?: EntityManager): Promise<ProjectEntity> {
+    this.logger.debug('Saving project record', { projectId: project.id });
 
-    const project = await this.repository.findOneBy({ id });
+    const savedProject = await this.repositoryFor(manager).save(project);
 
-    this.logger.debug('Project lookup by id completed', {
-      found: project !== null,
-      projectId: id
-    });
+    this.logger.log('Project record saved', { projectId: savedProject.id });
 
-    return project;
+    return savedProject;
   }
 
-  async findByCreatedByUserId(createdByUserId: string): Promise<ProjectEntity[]> {
-    this.logger.debug('Finding projects by creating user id', { createdByUserId });
-
-    const projects = await this.repository.findBy({ createdByUserId });
-
-    this.logger.debug('Project lookup by creating user id completed', {
-      count: projects.length,
-      createdByUserId
-    });
-
-    return projects;
+  private repositoryFor(manager?: EntityManager): Repository<ProjectEntity> {
+    return manager?.getRepository(ProjectEntity) ?? this.repository;
   }
 }

@@ -9,11 +9,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { EnvironmentVariables } from '../config/environment';
-import { type UserStatus } from '../users/user.entity';
-import { UsersRepository } from '../users/users.repository';
-import { type LoginUserInput } from './login-user.schema';
-import { PasswordHasher } from './password-hasher';
-import { type RegisterUserInput } from './register-user.schema';
+import { type UserStatus } from '../users/entities/user.entity';
+import { UsersRepository } from '../users/repositories/users.repository';
+import { type LoginUserInput } from './contracts/login-user.schema';
+import { type RegisterUserInput } from './contracts/register-user.schema';
+import { PasswordHasher } from './password/password-hasher';
 
 export interface RegisteredUser {
   id: string;

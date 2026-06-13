@@ -1,11 +1,16 @@
-import { ConflictException, ForbiddenException, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Logger,
+  UnauthorizedException
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { AuthService } from '../../auth/auth.service';
 import { EnvironmentVariables } from '../../config/environment';
-import { User } from '../../users/user.entity';
-import { type CreateUserRecord, UsersRepository } from '../../users/users.repository';
+import { User } from '../../users/entities/user.entity';
+import { type CreateUserRecord, UsersRepository } from '../../users/repositories/users.repository';
 
 type UsersRepositoryMock = {
   findByEmail: jest.Mock<Promise<User | null>, [string]>;

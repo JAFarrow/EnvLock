@@ -3,8 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { type Repository } from 'typeorm';
 
-import { User } from '../../users/user.entity';
-import { UsersRepository } from '../../users/users.repository';
+import { User } from '../../users/entities/user.entity';
+import { UsersRepository } from '../../users/repositories/users.repository';
 
 type TypeOrmUserRepositoryMock = {
   create: jest.Mock<User, [Partial<User>]>;
@@ -110,23 +110,6 @@ describe('UsersRepository', () => {
       email: 'found@example.com',
       found: true,
       userId: user.id
-    });
-  });
-
-  it('finds users by id', async () => {
-    const user = createUser({ id: '84007988-2b77-4878-b3c0-4127f19ce217' });
-    typeOrmRepository.findOneBy.mockResolvedValueOnce(user);
-
-    await expect(usersRepository.findById('84007988-2b77-4878-b3c0-4127f19ce217')).resolves.toBe(
-      user
-    );
-
-    expect(typeOrmRepository.findOneBy).toHaveBeenCalledWith({
-      id: '84007988-2b77-4878-b3c0-4127f19ce217'
-    });
-    expect(debugSpy).toHaveBeenCalledWith('User lookup by id completed', {
-      userId: '84007988-2b77-4878-b3c0-4127f19ce217',
-      found: true
     });
   });
 });

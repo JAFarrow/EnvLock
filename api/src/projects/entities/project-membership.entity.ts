@@ -11,16 +11,13 @@ import {
   UpdateDateColumn
 } from 'typeorm';
 
-import { User } from '../users/user.entity';
-import { ProjectRole } from './project-role.enum';
-import { ProjectEntity } from './project.entity';
+import { User } from '../../users/entities/user.entity';
+import { ProjectRole } from '../entities/project-role.enum';
+import { ProjectEntity } from '../entities/project.entity';
 
 @Entity({ name: 'project_memberships' })
 @Unique('UQ_project_memberships_project_id_user_id', ['projectId', 'userId'])
-@Check(
-  'CHK_project_memberships_role',
-  `"role" IN ('owner', 'maintainer', 'developer')`
-)
+@Check('CHK_project_memberships_role', `"role" IN ('owner', 'maintainer', 'developer')`)
 @Index('idx_project_memberships_user_id', ['userId'])
 @Index('idx_project_memberships_project_id', ['projectId'])
 @Index('idx_project_memberships_project_role', ['projectId', 'role'])

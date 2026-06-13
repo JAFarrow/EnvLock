@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { User, type UserStatus } from './user.entity';
+import { User, type UserStatus } from '../entities/user.entity';
 
 export interface CreateUserRecord {
   email: string;
@@ -48,19 +48,6 @@ export class UsersRepository {
       email,
       found: user !== null,
       userId: user?.id
-    });
-
-    return user;
-  }
-
-  async findById(id: string): Promise<User | null> {
-    this.logger.debug('Finding user by id', { userId: id });
-
-    const user = await this.repository.findOneBy({ id });
-
-    this.logger.debug('User lookup by id completed', {
-      userId: id,
-      found: user !== null
     });
 
     return user;

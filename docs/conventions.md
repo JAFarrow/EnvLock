@@ -67,7 +67,9 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 - Where possible, use Nest exception filters for cross-cutting exception-to-HTTP response mapping rather than handling infrastructure errors inside services.
 - Use Nest's built-in `ConsoleLogger` for API logs; keep production logs single-line JSON for Render.
 - Keep TypeORM options centralized under `api/src/database` and add new entity classes to the shared entity list.
-- Keep domain entity files within their feature directory, such as `api/src/users`.
+- Organize API code by feature under `api/src/<feature>`.
+- Keep primary Nest entry points such as `*.controller.ts`, `*.module.ts`, and `*.service.ts` at the feature root when present.
+- Put supporting feature files in purpose-named subdirectories such as `contracts/`, `entities/`, `repositories/`, `guards/`, `strategies/`, or other narrowly scoped implementation folders.
 
 ## Dependency Conventions
 

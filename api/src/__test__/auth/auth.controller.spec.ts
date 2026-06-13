@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { AuthController } from '../../auth/auth.controller';
 import { AuthService, type LoginResult, type RegisteredUser } from '../../auth/auth.service';
-import { type LoginUserInput } from '../../auth/login-user.schema';
-import { type RegisterUserInput } from '../../auth/register-user.schema';
+import { type LoginUserInput } from '../../auth/contracts/login-user.schema';
+import { type RegisterUserInput } from '../../auth/contracts/register-user.schema';
 
 type AuthServiceMock = {
   register: jest.Mock<Promise<RegisteredUser>, [RegisterUserInput]>;

@@ -1,8 +1,8 @@
 import { BadRequestException, Body, Controller, Logger, Post } from '@nestjs/common';
 
 import { AuthService, type LoginResult, type RegisteredUser } from './auth.service';
-import { loginUserSchema } from './login-user.schema';
-import { registerUserSchema } from './register-user.schema';
+import { loginUserSchema } from './contracts/login-user.schema';
+import { registerUserSchema } from './contracts/register-user.schema';
 
 @Controller('auth')
 export class AuthController {
