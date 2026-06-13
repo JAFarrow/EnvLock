@@ -1,12 +1,14 @@
 import { ConsoleLogger, Module, type LogLevel } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import { EnvironmentVariables, validateEnvironment } from './config/environment';
+import { PostgresExceptionFilter } from './database/postgres-exception.filter';
 import { createTypeOrmOptions } from './database/typeorm.options';
-import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -15,11 +17,15 @@ import { UsersModule } from './users/users.module';
       inject: [ConfigService],
       useFactory: createTypeOrmOptions
     }),
-    UsersModule
+    AuthModule
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_FILTER,
+      useClass: PostgresExceptionFilter
+    },
     {
       provide: ConsoleLogger,
       inject: [ConfigService],
