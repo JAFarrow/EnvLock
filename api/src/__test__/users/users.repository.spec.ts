@@ -3,17 +3,17 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { type Repository } from 'typeorm';
 
-import { User } from '../../users/entities/user.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { UsersRepository } from '../../users/repositories/users.repository';
 
 type TypeOrmUserRepositoryMock = {
-  create: jest.Mock<User, [Partial<User>]>;
-  save: jest.Mock<Promise<User>, [User]>;
-  findOneBy: jest.Mock<Promise<User | null>, [Partial<User>]>;
+  create: jest.Mock<UserEntity, [Partial<UserEntity>]>;
+  save: jest.Mock<Promise<UserEntity>, [UserEntity]>;
+  findOneBy: jest.Mock<Promise<UserEntity | null>, [Partial<UserEntity>]>;
 };
 
-function createUser(overrides: Partial<User> = {}): User {
-  return Object.assign(new User(), {
+function createUser(overrides: Partial<UserEntity> = {}): UserEntity {
+  return Object.assign(new UserEntity(), {
     id: 'f2e93f1e-52d7-4ba0-aa67-5d3719e6b0f4',
     email: 'user@example.com',
     passwordHash: 'hashed-password',
@@ -35,17 +35,17 @@ describe('UsersRepository', () => {
     logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
 
     typeOrmRepository = {
-      create: jest.fn<User, [Partial<User>]>((input) => createUser(input)),
-      save: jest.fn<Promise<User>, [User]>((user) => Promise.resolve(user)),
-      findOneBy: jest.fn<Promise<User | null>, [Partial<User>]>(() => Promise.resolve(null))
+      create: jest.fn<UserEntity, [Partial<UserEntity>]>((input) => createUser(input)),
+      save: jest.fn<Promise<UserEntity>, [UserEntity]>((user) => Promise.resolve(user)),
+      findOneBy: jest.fn<Promise<UserEntity | null>, [Partial<UserEntity>]>(() => Promise.resolve(null))
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersRepository,
         {
-          provide: getRepositoryToken(User),
-          useValue: typeOrmRepository satisfies Partial<Repository<User>>
+          provide: getRepositoryToken(UserEntity),
+          useValue: typeOrmRepository satisfies Partial<Repository<UserEntity>>
         }
       ]
     }).compile();

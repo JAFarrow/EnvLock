@@ -13,7 +13,7 @@ export type UserStatus = (typeof userStatuses)[number];
 
 @Entity({ name: 'users' })
 @Check('CHK_users_status', `"status" IN ('pending', 'active', 'disabled')`)
-export class User {
+export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

@@ -11,7 +11,7 @@ import {
   UpdateDateColumn
 } from 'typeorm';
 
-import { User } from '../../users/entities/user.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { ProjectRole } from '../entities/project-role.enum';
 import { ProjectEntity } from '../entities/project.entity';
 
@@ -50,11 +50,11 @@ export class ProjectMembershipEntity {
   @JoinColumn({ name: 'project_id' })
   project!: ProjectEntity;
 
-  @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
+  @ManyToOne(() => UserEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user!: UserEntity;
 
-  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'added_by_user_id' })
-  addedByUser!: User | null;
+  addedByUser!: UserEntity | null;
 }

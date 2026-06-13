@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { User, type UserStatus } from '../entities/user.entity';
+import { UserEntity, type UserStatus } from '../entities/user.entity';
 
 export interface CreateUserRecord {
   email: string;
@@ -14,9 +14,9 @@ export interface CreateUserRecord {
 export class UsersRepository {
   private readonly logger = new Logger(UsersRepository.name);
 
-  constructor(@InjectRepository(User) private readonly repository: Repository<User>) {}
+  constructor(@InjectRepository(UserEntity) private readonly repository: Repository<UserEntity>) {}
 
-  async create(input: CreateUserRecord): Promise<User> {
+  async create(input: CreateUserRecord): Promise<UserEntity> {
     this.logger.debug('Creating user record', {
       email: input.email,
       status: input.status ?? 'pending'
@@ -39,7 +39,7 @@ export class UsersRepository {
     return savedUser;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<UserEntity | null> {
     this.logger.debug('Finding user by email', { email });
 
     const user = await this.repository.findOneBy({ email });

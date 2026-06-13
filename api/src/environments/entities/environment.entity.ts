@@ -5,29 +5,34 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
 
-import { EnvironmentEntity } from '../../environments/entities/environment.entity';
+import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-import { ProjectMembershipEntity } from './project-membership.entity';
 
-@Entity({ name: 'projects' })
-@Index('idx_projects_created_by_user_id', ['createdByUserId'])
-export class ProjectEntity {
+@Entity({ name: 'environments' })
+@Index('idx_environments_project_id', ['projectId'])
+@Index('uq_environments_project_slug_active', ['projectId', 'slug'], {
+  unique: true,
+  where: '"archived_at" IS NULL'
+})
+export class EnvironmentEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 120 })
+  @Column({ name: 'project_id', type: 'uuid' })
+  projectId!: string;
+
+  @Column({ type: 'varchar', length: 80 })
   name!: string;
+
+  @Column({ type: 'varchar', length: 80 })
+  slug!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   description!: string | null;
-
-  @Column({ name: 'repository_url', type: 'varchar', length: 2048, nullable: true })
-  repositoryUrl!: string | null;
 
   @Column({ name: 'created_by_user_id', type: 'uuid' })
   createdByUserId!: string;
@@ -41,13 +46,14 @@ export class ProjectEntity {
   @Column({ name: 'archived_at', type: 'timestamptz', nullable: true })
   archivedAt!: Date | null;
 
+  @ManyToOne(() => ProjectEntity, (project) => project.environments, {
+    nullable: false,
+    onDelete: 'CASCADE'
+  })
+  @JoinColumn({ name: 'project_id' })
+  project!: ProjectEntity;
+
   @ManyToOne(() => UserEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'created_by_user_id' })
   createdByUser!: UserEntity;
-
-  @OneToMany(() => ProjectMembershipEntity, (membership) => membership.project)
-  memberships!: ProjectMembershipEntity[];
-
-  @OneToMany(() => EnvironmentEntity, (environment) => environment.project)
-  environments!: EnvironmentEntity[];
 }

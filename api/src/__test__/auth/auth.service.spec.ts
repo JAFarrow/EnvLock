@@ -9,12 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 
 import { AuthService } from '../../auth/auth.service';
 import { EnvironmentVariables } from '../../config/environment';
-import { User } from '../../users/entities/user.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { type CreateUserRecord, UsersRepository } from '../../users/repositories/users.repository';
 
 type UsersRepositoryMock = {
-  findByEmail: jest.Mock<Promise<User | null>, [string]>;
-  create: jest.Mock<Promise<User>, [CreateUserRecord]>;
+  findByEmail: jest.Mock<Promise<UserEntity | null>, [string]>;
+  create: jest.Mock<Promise<UserEntity>, [CreateUserRecord]>;
 };
 
 type PasswordHasherMock = {
@@ -30,8 +30,8 @@ type ConfigServiceMock = {
   get: jest.Mock<number, ['JWT_ACCESS_TOKEN_TTL_SECONDS', { infer: true }]>;
 };
 
-function createUser(overrides: Partial<User> = {}): User {
-  return Object.assign(new User(), {
+function createUser(overrides: Partial<UserEntity> = {}): UserEntity {
+  return Object.assign(new UserEntity(), {
     id: '9942365e-cb78-4f24-9f33-5b4a821759a4',
     email: 'user@example.com',
     passwordHash: 'hashed-password',
@@ -55,8 +55,8 @@ describe('AuthService', () => {
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
     usersRepository = {
-      findByEmail: jest.fn<Promise<User | null>, [string]>(() => Promise.resolve(null)),
-      create: jest.fn<Promise<User>, [CreateUserRecord]>((input) =>
+      findByEmail: jest.fn<Promise<UserEntity | null>, [string]>(() => Promise.resolve(null)),
+      create: jest.fn<Promise<UserEntity>, [CreateUserRecord]>((input) =>
         Promise.resolve(createUser({ ...input, id: '9942365e-cb78-4f24-9f33-5b4a821759a4' }))
       )
     };

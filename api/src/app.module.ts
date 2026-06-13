@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { EnvironmentVariables, validateEnvironment } from './config/environment';
 import { PostgresExceptionFilter } from './database/postgres-exception.filter';
 import { createTypeOrmOptions } from './database/typeorm.options';
+import { EnvironmentsModule } from './environments/environments.module';
 import { ProjectsModule } from './projects/projects.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { ProjectsModule } from './projects/projects.module';
       useFactory: createTypeOrmOptions
     }),
     AuthModule,
+    EnvironmentsModule,
     ProjectsModule
   ],
   controllers: [AppController],
