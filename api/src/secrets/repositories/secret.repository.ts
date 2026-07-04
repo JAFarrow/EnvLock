@@ -150,6 +150,21 @@ export class SecretRepository {
     });
   }
 
+  async listActiveByEnvironmentId(
+    environmentId: string,
+    manager?: EntityManager
+  ): Promise<SecretEntity[]> {
+    return this.repositoryFor(manager).find({
+      where: {
+        environmentId,
+        archivedAt: IsNull()
+      },
+      order: {
+        key: 'ASC'
+      }
+    });
+  }
+
   private repositoryFor(manager?: EntityManager): Repository<SecretEntity> {
     return manager?.getRepository(SecretEntity) ?? this.repository;
   }

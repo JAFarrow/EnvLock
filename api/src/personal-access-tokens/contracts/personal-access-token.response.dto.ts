@@ -1,6 +1,6 @@
-import { ProjectPersonalAccessTokenEntity } from '../entities/project-personal-access-token.entity';
+import { PersonalAccessTokenEntity } from '../entities/personal-access-token.entity';
 
-export interface ProjectPersonalAccessTokenResponseDto {
+export interface PersonalAccessTokenResponseDto {
   id: string;
   projectId: string;
   name: string;
@@ -10,10 +10,10 @@ export interface ProjectPersonalAccessTokenResponseDto {
   createdAt: string;
 }
 
-export function toProjectPersonalAccessTokenResponse(
-  token: ProjectPersonalAccessTokenEntity,
+export function toPersonalAccessTokenResponse(
+  token: PersonalAccessTokenEntity,
   rawToken: string
-): ProjectPersonalAccessTokenResponseDto {
+): PersonalAccessTokenResponseDto {
   return {
     id: token.id,
     projectId: token.projectId,

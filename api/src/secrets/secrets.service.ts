@@ -2,7 +2,9 @@ import { Injectable, InternalServerErrorException, NotFoundException } from '@ne
 import { randomUUID } from 'node:crypto';
 
 import { EnvironmentRepository } from '../environments/repositories/environment.repository';
+import { type AuthenticatedPersonalAccessToken } from '../auth/contracts/personal-access-token-request';
 import { ProjectAccessService } from '../projects/project-access.service';
+import { type CliSecretValuesResponseDto } from './contracts/cli-secret-values.response.dto';
 import { type CreateSecretDto } from './contracts/create-secret.dto';
 import { type UpdateSecretDto } from './contracts/update-secret.dto';
 import { type SecretListResponseDto } from './contracts/secret-list.response.dto';
@@ -60,6 +62,34 @@ export class SecretsService {
 
     return {
       items: secrets.map(toSecretResponse)
+    };
+  }
+
+  async findCliValues(
+    personalAccessToken: AuthenticatedPersonalAccessToken,
+    environmentSlug: string
+  ): Promise<CliSecretValuesResponseDto> {
+    const environment = await this.environmentRepository.findActiveByProjectAndSlug(
+      personalAccessToken.projectId,
+      environmentSlug
+    );
+
+    if (environment === null) {
+      throw new NotFoundException('Environment not found');
+    }
+
+    const secrets = await this.secretRepository.listActiveByEnvironmentId(environment.id);
+    const variables: Record<string, string> = {};
+
+    for (const secret of secrets) {
+      variables[secret.key] = this.decryptSecret(secret);
+    }
+
+    return {
+      projectId: personalAccessToken.projectId,
+      environmentId: environment.id,
+      environment: environment.slug,
+      variables
     };
   }
 
@@ -150,6 +180,23 @@ export class SecretsService {
   private encryptSecret(plaintext: string, secretId: string, environmentId: string) {
     try {
       return this.secretEncryptionService.encrypt(plaintext, { secretId, environmentId });
+    } catch {
+      throw new InternalServerErrorException('Unable to process secret');
+    }
+  }
+
+  private decryptSecret(secret: SecretEntity): string {
+    try {
+      return this.secretEncryptionService.decrypt(
+        {
+          encryptedValue: secret.encryptedValue,
+          initializationVector: secret.initializationVector,
+          authenticationTag: secret.authenticationTag,
+          encryptionKeyVersion: secret.encryptionKeyVersion,
+          encryptionFormatVersion: secret.encryptionFormatVersion
+        },
+        { secretId: secret.id, environmentId: secret.environmentId }
+      );
     } catch {
       throw new InternalServerErrorException('Unable to process secret');
     }

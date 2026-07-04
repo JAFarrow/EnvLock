@@ -3,18 +3,18 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { type EntityManager, type FindOneOptions, type Repository } from 'typeorm';
 
-import { ProjectPersonalAccessTokenEntity } from '../../personal-access-tokens/entities/project-personal-access-token.entity';
+import { PersonalAccessTokenEntity } from '../../personal-access-tokens/entities/personal-access-token.entity';
 import {
-  type CreateProjectPersonalAccessTokenRecord,
-  ProjectPersonalAccessTokenRepository
-} from '../../personal-access-tokens/repositories/project-personal-access-token.repository';
+  type CreatePersonalAccessTokenRecord,
+  PersonalAccessTokenRepository
+} from '../../personal-access-tokens/repositories/personal-access-token.repository';
 
-type TypeOrmProjectPersonalAccessTokenRepositoryMock = {
-  create: jest.Mock<ProjectPersonalAccessTokenEntity, [Partial<ProjectPersonalAccessTokenEntity>]>;
-  save: jest.Mock<Promise<ProjectPersonalAccessTokenEntity>, [ProjectPersonalAccessTokenEntity]>;
+type TypeOrmPersonalAccessTokenRepositoryMock = {
+  create: jest.Mock<PersonalAccessTokenEntity, [Partial<PersonalAccessTokenEntity>]>;
+  save: jest.Mock<Promise<PersonalAccessTokenEntity>, [PersonalAccessTokenEntity]>;
   findOne: jest.Mock<
-    Promise<ProjectPersonalAccessTokenEntity | null>,
-    [FindOneOptions<ProjectPersonalAccessTokenEntity>]
+    Promise<PersonalAccessTokenEntity | null>,
+    [FindOneOptions<PersonalAccessTokenEntity>]
   >;
 };
 
@@ -24,9 +24,9 @@ const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
 const now = new Date('2026-07-04T12:00:00.000Z');
 
 function createPersonalAccessToken(
-  overrides: Partial<ProjectPersonalAccessTokenEntity> = {}
-): ProjectPersonalAccessTokenEntity {
-  return Object.assign(new ProjectPersonalAccessTokenEntity(), {
+  overrides: Partial<PersonalAccessTokenEntity> = {}
+): PersonalAccessTokenEntity {
+  return Object.assign(new PersonalAccessTokenEntity(), {
     id: tokenId,
     projectId,
     userId,
@@ -43,8 +43,8 @@ function createPersonalAccessToken(
 }
 
 function createPersonalAccessTokenRecord(
-  overrides: Partial<CreateProjectPersonalAccessTokenRecord> = {}
-): CreateProjectPersonalAccessTokenRecord {
+  overrides: Partial<CreatePersonalAccessTokenRecord> = {}
+): CreatePersonalAccessTokenRecord {
   return {
     id: tokenId,
     projectId,
@@ -57,24 +57,24 @@ function createPersonalAccessTokenRecord(
   };
 }
 
-function createTypeOrmRepository(): TypeOrmProjectPersonalAccessTokenRepositoryMock {
+function createTypeOrmRepository(): TypeOrmPersonalAccessTokenRepositoryMock {
   return {
-    create: jest.fn<ProjectPersonalAccessTokenEntity, [Partial<ProjectPersonalAccessTokenEntity>]>(
-      (input) => createPersonalAccessToken(input)
+    create: jest.fn<PersonalAccessTokenEntity, [Partial<PersonalAccessTokenEntity>]>((input) =>
+      createPersonalAccessToken(input)
     ),
-    save: jest.fn<Promise<ProjectPersonalAccessTokenEntity>, [ProjectPersonalAccessTokenEntity]>(
-      (token) => Promise.resolve(token)
+    save: jest.fn<Promise<PersonalAccessTokenEntity>, [PersonalAccessTokenEntity]>((token) =>
+      Promise.resolve(token)
     ),
     findOne: jest.fn<
-      Promise<ProjectPersonalAccessTokenEntity | null>,
-      [FindOneOptions<ProjectPersonalAccessTokenEntity>]
+      Promise<PersonalAccessTokenEntity | null>,
+      [FindOneOptions<PersonalAccessTokenEntity>]
     >(() => Promise.resolve(null))
   };
 }
 
-describe('ProjectPersonalAccessTokenRepository', () => {
-  let repository: ProjectPersonalAccessTokenRepository;
-  let typeOrmRepository: TypeOrmProjectPersonalAccessTokenRepositoryMock;
+describe('PersonalAccessTokenRepository', () => {
+  let repository: PersonalAccessTokenRepository;
+  let typeOrmRepository: TypeOrmPersonalAccessTokenRepositoryMock;
 
   beforeEach(async () => {
     jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
@@ -84,17 +84,15 @@ describe('ProjectPersonalAccessTokenRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ProjectPersonalAccessTokenRepository,
+        PersonalAccessTokenRepository,
         {
-          provide: getRepositoryToken(ProjectPersonalAccessTokenEntity),
-          useValue: typeOrmRepository satisfies Partial<
-            Repository<ProjectPersonalAccessTokenEntity>
-          >
+          provide: getRepositoryToken(PersonalAccessTokenEntity),
+          useValue: typeOrmRepository satisfies Partial<Repository<PersonalAccessTokenEntity>>
         }
       ]
     }).compile();
 
-    repository = module.get(ProjectPersonalAccessTokenRepository);
+    repository = module.get(PersonalAccessTokenRepository);
   });
 
   afterEach(() => {
@@ -123,16 +121,16 @@ describe('ProjectPersonalAccessTokenRepository', () => {
   it('uses manager.getRepository when an EntityManager is supplied', async () => {
     const managerRepository = createTypeOrmRepository();
     const getRepository = jest.fn<
-      Repository<ProjectPersonalAccessTokenEntity>,
-      [typeof ProjectPersonalAccessTokenEntity]
-    >(() => managerRepository as unknown as Repository<ProjectPersonalAccessTokenEntity>);
+      Repository<PersonalAccessTokenEntity>,
+      [typeof PersonalAccessTokenEntity]
+    >(() => managerRepository as unknown as Repository<PersonalAccessTokenEntity>);
     const manager = {
       getRepository
     } as unknown as EntityManager;
 
     await repository.create(createPersonalAccessTokenRecord(), manager);
 
-    expect(getRepository).toHaveBeenCalledWith(ProjectPersonalAccessTokenEntity);
+    expect(getRepository).toHaveBeenCalledWith(PersonalAccessTokenEntity);
     expect(managerRepository.create).toHaveBeenCalledTimes(1);
     expect(typeOrmRepository.create).not.toHaveBeenCalled();
   });
@@ -144,6 +142,16 @@ describe('ProjectPersonalAccessTokenRepository', () => {
 
     expect(findOptions?.where).toMatchObject({ id: tokenId, projectId });
     expect(findOptions?.where).toHaveProperty('revokedAt');
+  });
+
+  it('finds active PATs by token id and hash', async () => {
+    await repository.findActiveByIdAndHash(tokenId, 'a'.repeat(64));
+
+    const findOptions = typeOrmRepository.findOne.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ id: tokenId, tokenHash: 'a'.repeat(64) });
+    expect(findOptions?.where).toHaveProperty('revokedAt');
+    expect(findOptions?.where).toHaveProperty('expiresAt');
   });
 
   it('saves PAT records', async () => {

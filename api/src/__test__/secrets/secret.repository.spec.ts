@@ -162,6 +162,17 @@ describe('SecretRepository', () => {
     expect(findOptions?.select).not.toHaveProperty('authenticationTag');
   });
 
+  it('lists active secrets with encrypted fields ordered by key', async () => {
+    await secretRepository.listActiveByEnvironmentId(environmentId);
+
+    const findOptions = typeOrmRepository.find.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ environmentId });
+    expect(findOptions?.where).toHaveProperty('archivedAt');
+    expect(findOptions?.order).toEqual({ key: 'ASC' });
+    expect(findOptions?.select).toBeUndefined();
+  });
+
   it('does not filter archived records for including-archived lookup', async () => {
     await secretRepository.findByEnvironmentAndIdIncludingArchived(environmentId, secretId);
 

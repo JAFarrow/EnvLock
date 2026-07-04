@@ -1,12 +1,12 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 
-import { ProjectPersonalAccessTokenEntity } from '../../personal-access-tokens/entities/project-personal-access-token.entity';
+import { PersonalAccessTokenEntity } from '../../personal-access-tokens/entities/personal-access-token.entity';
 import {
-  type CreateProjectPersonalAccessTokenRecord,
-  ProjectPersonalAccessTokenRepository
-} from '../../personal-access-tokens/repositories/project-personal-access-token.repository';
-import { ProjectPersonalAccessTokensService } from '../../personal-access-tokens/project-personal-access-tokens.service';
+  type CreatePersonalAccessTokenRecord,
+  PersonalAccessTokenRepository
+} from '../../personal-access-tokens/repositories/personal-access-token.repository';
+import { PersonalAccessTokensService } from '../../personal-access-tokens/personal-access-tokens.service';
 import { ProjectMembershipEntity } from '../../projects/entities/project-membership.entity';
 import { ProjectRole } from '../../projects/entities/project-role.enum';
 import { ProjectEntity } from '../../projects/entities/project.entity';
@@ -20,16 +20,13 @@ type ProjectMembershipsRepositoryMock = {
   >;
 };
 
-type ProjectPersonalAccessTokenRepositoryMock = {
-  create: jest.Mock<
-    Promise<ProjectPersonalAccessTokenEntity>,
-    [CreateProjectPersonalAccessTokenRecord]
-  >;
+type PersonalAccessTokenRepositoryMock = {
+  create: jest.Mock<Promise<PersonalAccessTokenEntity>, [CreatePersonalAccessTokenRecord]>;
   findUnrevokedByProjectAndId: jest.Mock<
-    Promise<ProjectPersonalAccessTokenEntity | null>,
+    Promise<PersonalAccessTokenEntity | null>,
     [string, string]
   >;
-  save: jest.Mock<Promise<ProjectPersonalAccessTokenEntity>, [ProjectPersonalAccessTokenEntity]>;
+  save: jest.Mock<Promise<PersonalAccessTokenEntity>, [PersonalAccessTokenEntity]>;
 };
 
 const now = new Date('2026-07-04T12:00:00.000Z');
@@ -71,9 +68,9 @@ function createMembership(
 }
 
 function createPersonalAccessToken(
-  overrides: Partial<ProjectPersonalAccessTokenEntity> = {}
-): ProjectPersonalAccessTokenEntity {
-  return Object.assign(new ProjectPersonalAccessTokenEntity(), {
+  overrides: Partial<PersonalAccessTokenEntity> = {}
+): PersonalAccessTokenEntity {
+  return Object.assign(new PersonalAccessTokenEntity(), {
     id: tokenId,
     projectId,
     userId,
@@ -89,10 +86,10 @@ function createPersonalAccessToken(
   });
 }
 
-describe('ProjectPersonalAccessTokensService', () => {
-  let service: ProjectPersonalAccessTokensService;
+describe('PersonalAccessTokensService', () => {
+  let service: PersonalAccessTokensService;
   let projectMembershipsRepository: ProjectMembershipsRepositoryMock;
-  let personalAccessTokenRepository: ProjectPersonalAccessTokenRepositoryMock;
+  let personalAccessTokenRepository: PersonalAccessTokenRepositoryMock;
 
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(now);
@@ -104,24 +101,23 @@ describe('ProjectPersonalAccessTokensService', () => {
       >(() => Promise.resolve(createMembership()))
     };
     personalAccessTokenRepository = {
-      create: jest.fn<
-        Promise<ProjectPersonalAccessTokenEntity>,
-        [CreateProjectPersonalAccessTokenRecord]
-      >((input) => Promise.resolve(createPersonalAccessToken(input))),
+      create: jest.fn<Promise<PersonalAccessTokenEntity>, [CreatePersonalAccessTokenRecord]>(
+        (input) => Promise.resolve(createPersonalAccessToken(input))
+      ),
       findUnrevokedByProjectAndId: jest.fn<
-        Promise<ProjectPersonalAccessTokenEntity | null>,
+        Promise<PersonalAccessTokenEntity | null>,
         [string, string]
       >(() => Promise.resolve(createPersonalAccessToken())),
-      save: jest.fn<Promise<ProjectPersonalAccessTokenEntity>, [ProjectPersonalAccessTokenEntity]>(
-        (token) => Promise.resolve(token)
+      save: jest.fn<Promise<PersonalAccessTokenEntity>, [PersonalAccessTokenEntity]>((token) =>
+        Promise.resolve(token)
       )
     };
 
-    service = new ProjectPersonalAccessTokensService(
+    service = new PersonalAccessTokensService(
       new ProjectAccessService(
         projectMembershipsRepository as unknown as ProjectMembershipsRepository
       ),
-      personalAccessTokenRepository as unknown as ProjectPersonalAccessTokenRepository
+      personalAccessTokenRepository as unknown as PersonalAccessTokenRepository
     );
   });
 

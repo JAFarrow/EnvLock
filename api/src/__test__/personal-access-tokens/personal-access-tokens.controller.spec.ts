@@ -7,15 +7,15 @@ import request from 'supertest';
 
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
 import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
-import { type CreateProjectPersonalAccessTokenDto } from '../../personal-access-tokens/contracts/create-project-personal-access-token.dto';
-import { type ProjectPersonalAccessTokenResponseDto } from '../../personal-access-tokens/contracts/project-personal-access-token.response.dto';
-import { ProjectPersonalAccessTokensController } from '../../personal-access-tokens/project-personal-access-tokens.controller';
-import { ProjectPersonalAccessTokensService } from '../../personal-access-tokens/project-personal-access-tokens.service';
+import { type CreatePersonalAccessTokenDto } from '../../personal-access-tokens/contracts/create-personal-access-token.dto';
+import { type PersonalAccessTokenResponseDto } from '../../personal-access-tokens/contracts/personal-access-token.response.dto';
+import { PersonalAccessTokensController } from '../../personal-access-tokens/personal-access-tokens.controller';
+import { PersonalAccessTokensService } from '../../personal-access-tokens/personal-access-tokens.service';
 
 type PersonalAccessTokensServiceMock = {
   create: jest.Mock<
-    Promise<ProjectPersonalAccessTokenResponseDto>,
-    [string, string, CreateProjectPersonalAccessTokenDto]
+    Promise<PersonalAccessTokenResponseDto>,
+    [string, string, CreatePersonalAccessTokenDto]
   >;
   revoke: jest.Mock<Promise<void>, [string, string, string]>;
 };
@@ -27,7 +27,7 @@ type ConfigServiceMock = {
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
 const tokenId = 'a65de020-3ac3-4f9d-b3df-3cde79de0511';
-const tokenResponse: ProjectPersonalAccessTokenResponseDto = {
+const tokenResponse: PersonalAccessTokenResponseDto = {
   id: tokenId,
   projectId,
   name: 'local dev laptop',
@@ -43,31 +43,31 @@ function createRequest(): AuthenticatedRequest {
   } as AuthenticatedRequest;
 }
 
-describe('ProjectPersonalAccessTokensController', () => {
-  let controller: ProjectPersonalAccessTokensController;
+describe('PersonalAccessTokensController', () => {
+  let controller: PersonalAccessTokensController;
   let service: PersonalAccessTokensServiceMock;
   let app: INestApplication | undefined;
 
   beforeEach(async () => {
     service = {
       create: jest.fn<
-        Promise<ProjectPersonalAccessTokenResponseDto>,
-        [string, string, CreateProjectPersonalAccessTokenDto]
+        Promise<PersonalAccessTokenResponseDto>,
+        [string, string, CreatePersonalAccessTokenDto]
       >(() => Promise.resolve(tokenResponse)),
       revoke: jest.fn<Promise<void>, [string, string, string]>(() => Promise.resolve())
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ProjectPersonalAccessTokensController],
+      controllers: [PersonalAccessTokensController],
       providers: [
         {
-          provide: ProjectPersonalAccessTokensService,
+          provide: PersonalAccessTokensService,
           useValue: service
         }
       ]
     }).compile();
 
-    controller = module.get(ProjectPersonalAccessTokensController);
+    controller = module.get(PersonalAccessTokensController);
   });
 
   afterEach(async () => {
@@ -174,7 +174,7 @@ describe('ProjectPersonalAccessTokensController', () => {
     };
     const module = await Test.createTestingModule({
       imports: [PassportModule],
-      controllers: [ProjectPersonalAccessTokensController],
+      controllers: [PersonalAccessTokensController],
       providers: [
         JwtStrategy,
         {
@@ -182,7 +182,7 @@ describe('ProjectPersonalAccessTokensController', () => {
           useValue: configService
         },
         {
-          provide: ProjectPersonalAccessTokensService,
+          provide: PersonalAccessTokensService,
           useValue: service
         }
       ]

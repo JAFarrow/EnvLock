@@ -4,33 +4,36 @@ import {
   Injectable,
   NotFoundException
 } from '@nestjs/common';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 import { ProjectRole } from '../projects/entities/project-role.enum';
 import { ProjectAccessService } from '../projects/project-access.service';
-import { type CreateProjectPersonalAccessTokenDto } from './contracts/create-project-personal-access-token.dto';
+import { type CreatePersonalAccessTokenDto } from './contracts/create-personal-access-token.dto';
 import {
-  type ProjectPersonalAccessTokenResponseDto,
-  toProjectPersonalAccessTokenResponse
-} from './contracts/project-personal-access-token.response.dto';
-import { ProjectPersonalAccessTokenRepository } from './repositories/project-personal-access-token.repository';
+  type PersonalAccessTokenResponseDto,
+  toPersonalAccessTokenResponse
+} from './contracts/personal-access-token.response.dto';
+import {
+  personalAccessTokenPrefix,
+  hashPersonalAccessTokenSecret
+} from '../auth/personal-access-token-secret';
+import { PersonalAccessTokenRepository } from './repositories/personal-access-token.repository';
 
-const personalAccessTokenPrefix = 'envlock_pat';
 const personalAccessTokenMaxLifetimeDays = 90;
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
 @Injectable()
-export class ProjectPersonalAccessTokensService {
+export class PersonalAccessTokensService {
   constructor(
     private readonly projectAccessService: ProjectAccessService,
-    private readonly personalAccessTokenRepository: ProjectPersonalAccessTokenRepository
+    private readonly personalAccessTokenRepository: PersonalAccessTokenRepository
   ) {}
 
   async create(
     userId: string,
     projectId: string,
-    input: CreateProjectPersonalAccessTokenDto
-  ): Promise<ProjectPersonalAccessTokenResponseDto> {
+    input: CreatePersonalAccessTokenDto
+  ): Promise<PersonalAccessTokenResponseDto> {
     await this.projectAccessService.findAccessibleActiveMembership(userId, projectId);
 
     const expiresAt = this.parseAndValidateExpiration(input.expiresAt);
@@ -42,12 +45,12 @@ export class ProjectPersonalAccessTokensService {
       projectId,
       userId,
       name: input.name,
-      tokenHash: hashTokenSecret(tokenSecret),
+      tokenHash: hashPersonalAccessTokenSecret(tokenSecret),
       tokenLastFour: tokenSecret.slice(-4),
       expiresAt
     });
 
-    return toProjectPersonalAccessTokenResponse(token, rawToken);
+    return toPersonalAccessTokenResponse(token, rawToken);
   }
 
   async revoke(actorUserId: string, projectId: string, tokenId: string): Promise<void> {
@@ -99,8 +102,4 @@ export class ProjectPersonalAccessTokensService {
 
     return expiresAt;
   }
-}
-
-function hashTokenSecret(tokenSecret: string): string {
-  return createHash('sha256').update(tokenSecret, 'utf8').digest('hex');
 }

@@ -12,11 +12,11 @@ import {
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
-@Entity({ name: 'project_personal_access_tokens' })
-@Index('idx_project_personal_access_tokens_project_id', ['projectId'])
-@Index('idx_project_personal_access_tokens_user_id', ['userId'])
-@Index('idx_project_personal_access_tokens_expires_at', ['expiresAt'])
-export class ProjectPersonalAccessTokenEntity {
+@Entity({ name: 'personal_access_tokens' })
+@Index('idx_personal_access_tokens_project_id', ['projectId'])
+@Index('idx_personal_access_tokens_user_id', ['userId'])
+@Index('idx_personal_access_tokens_expires_at', ['expiresAt'])
+export class PersonalAccessTokenEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { EnvironmentsModule } from '../environments/environments.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { CliSecretsController } from './cli-secrets.controller';
 import { SecretsController } from './secrets.controller';
 import { ConfigSecretEncryptionKeyProvider } from './encryption/config-secret-encryption-key.provider';
 import { SecretEncryptionKeyProvider } from './encryption/secret-encryption-key.provider';
@@ -19,7 +20,7 @@ import { SecretsService } from './secrets.service';
     ProjectsModule,
     TypeOrmModule.forFeature([SecretEntity])
   ],
-  controllers: [SecretsController],
+  controllers: [SecretsController, CliSecretsController],
   providers: [
     SecretsService,
     SecretRepository,

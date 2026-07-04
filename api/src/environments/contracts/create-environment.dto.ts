@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const environmentSlugSchema = z
+export const environmentSlugSchema = z
   .string()
   .trim()
   .max(80)

@@ -30,6 +30,7 @@ type ProjectMembershipsRepositoryMock = {
 
 type EnvironmentRepositoryMock = {
   findActiveByProjectAndId: jest.Mock<Promise<EnvironmentEntity | null>, [string, string]>;
+  findActiveByProjectAndSlug: jest.Mock<Promise<EnvironmentEntity | null>, [string, string]>;
 };
 
 type SecretRepositoryMock = {
@@ -37,6 +38,7 @@ type SecretRepositoryMock = {
   save: jest.Mock<Promise<SecretEntity>, [SecretEntity]>;
   findActiveByEnvironmentAndId: jest.Mock<Promise<SecretEntity | null>, [string, string]>;
   listActiveMetadataByEnvironmentId: jest.Mock<Promise<SecretMetadata[]>, [string]>;
+  listActiveByEnvironmentId: jest.Mock<Promise<SecretEntity[]>, [string]>;
 };
 
 type SecretEncryptionServiceMock = {
@@ -150,6 +152,9 @@ describe('SecretsService', () => {
     environmentRepository = {
       findActiveByProjectAndId: jest.fn<Promise<EnvironmentEntity | null>, [string, string]>(() =>
         Promise.resolve(createEnvironment())
+      ),
+      findActiveByProjectAndSlug: jest.fn<Promise<EnvironmentEntity | null>, [string, string]>(() =>
+        Promise.resolve(createEnvironment())
       )
     };
     secretRepository = {
@@ -161,6 +166,9 @@ describe('SecretsService', () => {
         Promise.resolve(createSecret())
       ),
       listActiveMetadataByEnvironmentId: jest.fn<Promise<SecretMetadata[]>, [string]>(() =>
+        Promise.resolve([createSecret()])
+      ),
+      listActiveByEnvironmentId: jest.fn<Promise<SecretEntity[]>, [string]>(() =>
         Promise.resolve([createSecret()])
       )
     };
@@ -341,6 +349,61 @@ describe('SecretsService', () => {
     expect(response.items[0]).not.toHaveProperty('authenticationTag');
     expect(response.items[0]).not.toHaveProperty('encryptionKeyVersion');
     expect(response.items[0]).not.toHaveProperty('encryptionFormatVersion');
+  });
+
+  it('returns decrypted secret values for CLI requests authenticated by project PAT', async () => {
+    await expect(
+      secretsService.findCliValues({ id: 'pat-id', projectId, userId }, 'production')
+    ).resolves.toEqual({
+      projectId,
+      environmentId,
+      environment: 'production',
+      variables: {
+        DATABASE_URL: plaintext
+      }
+    });
+
+    expect(environmentRepository.findActiveByProjectAndSlug).toHaveBeenCalledWith(
+      projectId,
+      'production'
+    );
+    expect(secretRepository.listActiveByEnvironmentId).toHaveBeenCalledWith(environmentId);
+    expect(secretEncryptionService.decrypt).toHaveBeenCalledWith(
+      expect.objectContaining({ encryptedValue: Buffer.from('ciphertext') }),
+      { secretId, environmentId }
+    );
+  });
+
+  it('returns an empty CLI variables object when no active secrets exist', async () => {
+    secretRepository.listActiveByEnvironmentId.mockResolvedValueOnce([]);
+
+    await expect(
+      secretsService.findCliValues({ id: 'pat-id', projectId, userId }, 'production')
+    ).resolves.toMatchObject({ variables: {} });
+  });
+
+  it('returns 404 for missing CLI environments', async () => {
+    environmentRepository.findActiveByProjectAndSlug.mockResolvedValueOnce(null);
+
+    await expect(
+      secretsService.findCliValues({ id: 'pat-id', projectId, userId }, 'missing')
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(secretRepository.listActiveByEnvironmentId).not.toHaveBeenCalled();
+  });
+
+  it('does not expose plaintext when CLI decryption fails', async () => {
+    secretEncryptionService.decrypt.mockImplementationOnce(() => {
+      throw new Error(`decryption failed for ${plaintext}`);
+    });
+
+    try {
+      await secretsService.findCliValues({ id: 'pat-id', projectId, userId }, 'production');
+      throw new Error('Expected findCliValues to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(InternalServerErrorException);
+      expect((error as Error).message).not.toContain(plaintext);
+    }
   });
 
   it('allows an owner to rename a secret without re-encryption', async () => {
