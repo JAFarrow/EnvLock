@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
 import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
 import { type CreateSecretDto } from '../../secrets/contracts/create-secret.dto';
@@ -138,16 +139,16 @@ describe('SecretsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .post(`/projects/${projectId}/environments/${environmentId}/secrets`)
+      .post(`/api/projects/${projectId}/environments/${environmentId}/secrets`)
       .expect(401);
     await request(server)
-      .get(`/projects/${projectId}/environments/${environmentId}/secrets`)
+      .get(`/api/projects/${projectId}/environments/${environmentId}/secrets`)
       .expect(401);
     await request(server)
-      .patch(`/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
+      .patch(`/api/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
       .expect(401);
     await request(server)
-      .delete(`/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
+      .delete(`/api/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
       .expect(401);
   });
 
@@ -158,15 +159,15 @@ describe('SecretsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .get(`/projects/not-a-uuid/environments/${environmentId}/secrets`)
+      .get(`/api/projects/not-a-uuid/environments/${environmentId}/secrets`)
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
     await request(server)
-      .get(`/projects/${projectId}/environments/not-a-uuid/secrets`)
+      .get(`/api/projects/${projectId}/environments/not-a-uuid/secrets`)
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
     await request(server)
-      .patch(`/projects/${projectId}/environments/${environmentId}/secrets/not-a-uuid`)
+      .patch(`/api/projects/${projectId}/environments/${environmentId}/secrets/not-a-uuid`)
       .set('Authorization', `Bearer ${token}`)
       .send({ key: 'DATABASE_URL' })
       .expect(400);
@@ -179,22 +180,22 @@ describe('SecretsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     const createResponse = await request(server)
-      .post(`/projects/${projectId}/environments/${environmentId}/secrets`)
+      .post(`/api/projects/${projectId}/environments/${environmentId}/secrets`)
       .set('Authorization', `Bearer ${token}`)
       .send({ key: 'DATABASE_URL', value: 'postgresql://example' })
       .expect(201);
     const listResponse = await request(server)
-      .get(`/projects/${projectId}/environments/${environmentId}/secrets`)
+      .get(`/api/projects/${projectId}/environments/${environmentId}/secrets`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
     const updateResponse = await request(server)
-      .patch(`/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
+      .patch(`/api/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ key: 'PRIMARY_DATABASE_URL' })
       .expect(200);
 
     await request(server)
-      .delete(`/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
+      .delete(`/api/projects/${projectId}/environments/${environmentId}/secrets/${secretId}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(204);
 
@@ -230,6 +231,7 @@ describe('SecretsController', () => {
     }).compile();
 
     app = module.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   }
 });

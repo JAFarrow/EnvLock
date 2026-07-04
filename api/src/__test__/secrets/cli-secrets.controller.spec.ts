@@ -2,6 +2,7 @@ import { type INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedPersonalAccessTokenRequest } from '../../auth/contracts/personal-access-token-request';
 import { PersonalAccessTokenAuthGuard } from '../../auth/guards/personal-access-token-auth.guard';
 import { CliSecretsController } from '../../secrets/cli-secrets.controller';
@@ -82,7 +83,7 @@ describe('CliSecretsController', () => {
 
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
     const response = await request(server)
-      .get('/cli/secrets')
+      .get('/api/cli/secrets')
       .query({ environmentSlug: 'production' })
       .set('Authorization', `Bearer envlock_pat_${tokenId}.secret`)
       .expect(200);
@@ -97,12 +98,12 @@ describe('CliSecretsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .get('/cli/secrets')
+      .get('/api/cli/secrets')
       .query({})
       .set('Authorization', `Bearer envlock_pat_${tokenId}.secret`)
       .expect(400);
     await request(server)
-      .get('/cli/secrets')
+      .get('/api/cli/secrets')
       .query({ environmentSlug: 'Invalid_Slug' })
       .set('Authorization', `Bearer envlock_pat_${tokenId}.secret`)
       .expect(400);
@@ -132,6 +133,7 @@ describe('CliSecretsController', () => {
       .compile();
 
     app = module.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   }
 });

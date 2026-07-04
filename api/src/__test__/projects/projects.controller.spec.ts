@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
 import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
 import { type CreateProjectDto } from '../../projects/contracts/create-project.dto';
@@ -131,7 +132,7 @@ describe('ProjectsController', () => {
 
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
-    await request(server).get('/projects').expect(401);
+    await request(server).get('/api/projects').expect(401);
   });
 
   it('returns 400 for invalid project UUIDs', async () => {
@@ -141,7 +142,7 @@ describe('ProjectsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .get('/projects/not-a-uuid')
+      .get('/api/projects/not-a-uuid')
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
   });
@@ -167,6 +168,7 @@ describe('ProjectsController', () => {
     }).compile();
 
     app = module.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   }
 });

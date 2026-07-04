@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { applyApiPrefix } from '../../api-prefix';
 import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
 import { type AddProjectMemberDto } from '../../projects/contracts/add-project-member.dto';
 import { type ProjectMemberListResponseDto } from '../../projects/contracts/project-member-list.response.dto';
@@ -73,10 +74,10 @@ describe('ProjectMembershipsController', () => {
 
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
-    await request(server).get(`/projects/${projectId}/members`).expect(401);
-    await request(server).post(`/projects/${projectId}/members`).expect(401);
-    await request(server).patch(`/projects/${projectId}/members/${memberUserId}`).expect(401);
-    await request(server).delete(`/projects/${projectId}/members/${memberUserId}`).expect(401);
+    await request(server).get(`/api/projects/${projectId}/members`).expect(401);
+    await request(server).post(`/api/projects/${projectId}/members`).expect(401);
+    await request(server).patch(`/api/projects/${projectId}/members/${memberUserId}`).expect(401);
+    await request(server).delete(`/api/projects/${projectId}/members/${memberUserId}`).expect(401);
   });
 
   it('returns 400 for invalid project and user UUIDs', async () => {
@@ -86,16 +87,16 @@ describe('ProjectMembershipsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .get('/projects/not-a-uuid/members')
+      .get('/api/projects/not-a-uuid/members')
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
     await request(server)
-      .patch(`/projects/${projectId}/members/not-a-uuid`)
+      .patch(`/api/projects/${projectId}/members/not-a-uuid`)
       .set('Authorization', `Bearer ${token}`)
       .send({ role: ProjectRole.MAINTAINER })
       .expect(400);
     await request(server)
-      .delete(`/projects/${projectId}/members/not-a-uuid`)
+      .delete(`/api/projects/${projectId}/members/not-a-uuid`)
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
   });
@@ -107,22 +108,22 @@ describe('ProjectMembershipsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     const listResponse = await request(server)
-      .get(`/projects/${projectId}/members`)
+      .get(`/api/projects/${projectId}/members`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
     const addResponse = await request(server)
-      .post(`/projects/${projectId}/members`)
+      .post(`/api/projects/${projectId}/members`)
       .set('Authorization', `Bearer ${token}`)
       .send({ email: '  Developer@Example.COM ', role: ProjectRole.DEVELOPER })
       .expect(201);
     const updateResponse = await request(server)
-      .patch(`/projects/${projectId}/members/${memberUserId}`)
+      .patch(`/api/projects/${projectId}/members/${memberUserId}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ role: ProjectRole.MAINTAINER })
       .expect(200);
 
     await request(server)
-      .delete(`/projects/${projectId}/members/${memberUserId}`)
+      .delete(`/api/projects/${projectId}/members/${memberUserId}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(204);
 
@@ -154,17 +155,17 @@ describe('ProjectMembershipsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .post(`/projects/${projectId}/members`)
+      .post(`/api/projects/${projectId}/members`)
       .set('Authorization', `Bearer ${token}`)
       .send({ email: 'owner@example.com', role: ProjectRole.OWNER })
       .expect(400);
     await request(server)
-      .patch(`/projects/${projectId}/members/${memberUserId}`)
+      .patch(`/api/projects/${projectId}/members/${memberUserId}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ role: ProjectRole.OWNER })
       .expect(400);
     await request(server)
-      .post(`/projects/${projectId}/members`)
+      .post(`/api/projects/${projectId}/members`)
       .set('Authorization', `Bearer ${token}`)
       .send({ email: 'developer@example.com', role: ProjectRole.DEVELOPER, userId: actorUserId })
       .expect(400);
@@ -177,7 +178,7 @@ describe('ProjectMembershipsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     const response = await request(server)
-      .get(`/projects/${projectId}/members`)
+      .get(`/api/projects/${projectId}/members`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
     const body = response.body as ProjectMemberListResponseDto;
@@ -210,6 +211,7 @@ describe('ProjectMembershipsController', () => {
     }).compile();
 
     app = module.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   }
 

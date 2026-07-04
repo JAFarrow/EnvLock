@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
 import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
 import { type CreatePersonalAccessTokenDto } from '../../personal-access-tokens/contracts/create-personal-access-token.dto';
@@ -99,7 +100,7 @@ describe('PersonalAccessTokensController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .post(`/projects/${projectId}/pats`)
+      .post(`/api/projects/${projectId}/pats`)
       .send({ name: 'local dev laptop', expiresAt: '2026-09-04T12:00:00.000Z' })
       .expect(401);
   });
@@ -111,22 +112,22 @@ describe('PersonalAccessTokensController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .post('/projects/not-a-uuid/pats')
+      .post('/api/projects/not-a-uuid/pats')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'local dev laptop', expiresAt: '2026-09-04T12:00:00.000Z' })
       .expect(400);
     await request(server)
-      .post(`/projects/${projectId}/pats`)
+      .post(`/api/projects/${projectId}/pats`)
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'local dev laptop' })
       .expect(400);
     await request(server)
-      .post(`/projects/${projectId}/pats`)
+      .post(`/api/projects/${projectId}/pats`)
       .set('Authorization', `Bearer ${token}`)
       .send({ name: '', expiresAt: '2026-09-04T12:00:00.000Z' })
       .expect(400);
     await request(server)
-      .delete(`/projects/${projectId}/pats/not-a-uuid`)
+      .delete(`/api/projects/${projectId}/pats/not-a-uuid`)
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
   });
@@ -144,7 +145,7 @@ describe('PersonalAccessTokensController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .delete(`/projects/${projectId}/pats/${tokenId}`)
+      .delete(`/api/projects/${projectId}/pats/${tokenId}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(204);
   });
@@ -156,7 +157,7 @@ describe('PersonalAccessTokensController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     const response = await request(server)
-      .post(`/projects/${projectId}/pats`)
+      .post(`/api/projects/${projectId}/pats`)
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'local dev laptop', expiresAt: '2026-09-04T12:00:00.000Z' })
       .expect(201);
@@ -189,6 +190,7 @@ describe('PersonalAccessTokensController', () => {
     }).compile();
 
     app = module.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   }
 });

@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
 import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
 import { type CreateEnvironmentDto } from '../../environments/contracts/create-environment.dto';
@@ -174,7 +175,7 @@ describe('EnvironmentsController', () => {
 
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
-    await request(server).get(`/projects/${projectId}/environments`).expect(401);
+    await request(server).get(`/api/projects/${projectId}/environments`).expect(401);
   });
 
   it('returns 400 for invalid project UUIDs', async () => {
@@ -184,7 +185,7 @@ describe('EnvironmentsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .get('/projects/not-a-uuid/environments')
+      .get('/api/projects/not-a-uuid/environments')
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
   });
@@ -196,7 +197,7 @@ describe('EnvironmentsController', () => {
     const server = app?.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .get(`/projects/${projectId}/environments/not-a-uuid`)
+      .get(`/api/projects/${projectId}/environments/not-a-uuid`)
       .set('Authorization', `Bearer ${token}`)
       .expect(400);
   });
@@ -222,6 +223,7 @@ describe('EnvironmentsController', () => {
     }).compile();
 
     app = module.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   }
 });

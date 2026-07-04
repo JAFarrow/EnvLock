@@ -3,13 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { EnvironmentVariables, validateEnvironment } from './config/environment';
 import { createTypeOrmOptions } from './database/typeorm.options';
 import { EnvironmentsModule } from './environments/environments.module';
 import { PostgresExceptionFilter } from './filters/postgres-exception.filter';
+import { HealthController } from './health/health.controller';
+import { HealthService } from './health/health.service';
 import { PersonalAccessTokensModule } from './personal-access-tokens/personal-access-tokens.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SecretsModule } from './secrets/secrets.module';
@@ -27,9 +27,9 @@ import { SecretsModule } from './secrets/secrets.module';
     ProjectsModule,
     SecretsModule
   ],
-  controllers: [AppController],
+  controllers: [HealthController],
   providers: [
-    AppService,
+    HealthService,
     {
       provide: APP_FILTER,
       useClass: PostgresExceptionFilter
