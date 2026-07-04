@@ -10,6 +10,7 @@ import { EnvironmentVariables, validateEnvironment } from './config/environment'
 import { createTypeOrmOptions } from './database/typeorm.options';
 import { EnvironmentsModule } from './environments/environments.module';
 import { PostgresExceptionFilter } from './filters/postgres-exception.filter';
+import { ProjectPersonalAccessTokensModule } from './personal-access-tokens/project-personal-access-tokens.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SecretsModule } from './secrets/secrets.module';
 
@@ -22,6 +23,7 @@ import { SecretsModule } from './secrets/secrets.module';
     }),
     AuthModule,
     EnvironmentsModule,
+    ProjectPersonalAccessTokensModule,
     ProjectsModule,
     SecretsModule
   ],
