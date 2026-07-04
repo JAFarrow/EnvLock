@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 
 import { ProjectPersonalAccessTokenEntity } from '../../personal-access-tokens/entities/project-personal-access-token.entity';
@@ -25,11 +25,18 @@ type ProjectPersonalAccessTokenRepositoryMock = {
     Promise<ProjectPersonalAccessTokenEntity>,
     [CreateProjectPersonalAccessTokenRecord]
   >;
+  findUnrevokedByProjectAndId: jest.Mock<
+    Promise<ProjectPersonalAccessTokenEntity | null>,
+    [string, string]
+  >;
+  save: jest.Mock<Promise<ProjectPersonalAccessTokenEntity>, [ProjectPersonalAccessTokenEntity]>;
 };
 
 const now = new Date('2026-07-04T12:00:00.000Z');
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
+const otherUserId = '38ad4ca2-6416-4c58-a574-61c2d1a53d08';
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
+const tokenId = 'a65de020-3ac3-4f9d-b3df-3cde79de0511';
 
 function createProject(overrides: Partial<ProjectEntity> = {}): ProjectEntity {
   return Object.assign(new ProjectEntity(), {
@@ -64,14 +71,21 @@ function createMembership(
 }
 
 function createPersonalAccessToken(
-  input: CreateProjectPersonalAccessTokenRecord
+  overrides: Partial<ProjectPersonalAccessTokenEntity> = {}
 ): ProjectPersonalAccessTokenEntity {
   return Object.assign(new ProjectPersonalAccessTokenEntity(), {
-    ...input,
+    id: tokenId,
+    projectId,
+    userId,
+    name: 'local dev laptop',
+    tokenHash: 'a'.repeat(64),
+    tokenLastFour: 'last',
+    expiresAt: new Date('2026-09-04T12:00:00.000Z'),
     lastUsedAt: null,
     revokedAt: null,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    ...overrides
   });
 }
 
@@ -93,7 +107,14 @@ describe('ProjectPersonalAccessTokensService', () => {
       create: jest.fn<
         Promise<ProjectPersonalAccessTokenEntity>,
         [CreateProjectPersonalAccessTokenRecord]
-      >((input) => Promise.resolve(createPersonalAccessToken(input)))
+      >((input) => Promise.resolve(createPersonalAccessToken(input))),
+      findUnrevokedByProjectAndId: jest.fn<
+        Promise<ProjectPersonalAccessTokenEntity | null>,
+        [string, string]
+      >(() => Promise.resolve(createPersonalAccessToken())),
+      save: jest.fn<Promise<ProjectPersonalAccessTokenEntity>, [ProjectPersonalAccessTokenEntity]>(
+        (token) => Promise.resolve(token)
+      )
     };
 
     service = new ProjectPersonalAccessTokensService(
@@ -219,5 +240,68 @@ describe('ProjectPersonalAccessTokensService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(personalAccessTokenRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('allows developers to revoke their own PATs', async () => {
+    await expect(service.revoke(userId, projectId, tokenId)).resolves.toBeUndefined();
+
+    const savedToken = personalAccessTokenRepository.save.mock.calls[0]?.[0];
+
+    expect(personalAccessTokenRepository.findUnrevokedByProjectAndId).toHaveBeenCalledWith(
+      projectId,
+      tokenId
+    );
+    expect(savedToken?.revokedAt).toBeInstanceOf(Date);
+  });
+
+  it.each([ProjectRole.OWNER, ProjectRole.MAINTAINER])(
+    'allows %s members to revoke any project PAT',
+    async (role) => {
+      projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+        createMembership({ role })
+      );
+      personalAccessTokenRepository.findUnrevokedByProjectAndId.mockResolvedValueOnce(
+        createPersonalAccessToken({ userId: otherUserId })
+      );
+
+      await expect(service.revoke(userId, projectId, tokenId)).resolves.toBeUndefined();
+
+      expect(personalAccessTokenRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ revokedAt: expect.any(Date) as Date })
+      );
+    }
+  );
+
+  it("rejects developers revoking another user's PAT", async () => {
+    personalAccessTokenRepository.findUnrevokedByProjectAndId.mockResolvedValueOnce(
+      createPersonalAccessToken({ userId: otherUserId })
+    );
+
+    await expect(service.revoke(userId, projectId, tokenId)).rejects.toBeInstanceOf(
+      ForbiddenException
+    );
+
+    expect(personalAccessTokenRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when a non-member revokes a PAT', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(null);
+
+    await expect(service.revoke(userId, projectId, tokenId)).rejects.toBeInstanceOf(
+      NotFoundException
+    );
+
+    expect(personalAccessTokenRepository.findUnrevokedByProjectAndId).not.toHaveBeenCalled();
+    expect(personalAccessTokenRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when revoking a missing or already revoked PAT', async () => {
+    personalAccessTokenRepository.findUnrevokedByProjectAndId.mockResolvedValueOnce(null);
+
+    await expect(service.revoke(userId, projectId, tokenId)).rejects.toBeInstanceOf(
+      NotFoundException
+    );
+
+    expect(personalAccessTokenRepository.save).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 
 import { ProjectPersonalAccessTokenEntity } from '../entities/project-personal-access-token.entity';
 
@@ -42,6 +42,41 @@ export class ProjectPersonalAccessTokenRepository {
     const savedToken = await repository.save(token);
 
     this.logger.log('Project personal access token record created', {
+      projectId: savedToken.projectId,
+      tokenId: savedToken.id,
+      userId: savedToken.userId
+    });
+
+    return savedToken;
+  }
+
+  async findUnrevokedByProjectAndId(
+    projectId: string,
+    tokenId: string,
+    manager?: EntityManager
+  ): Promise<ProjectPersonalAccessTokenEntity | null> {
+    return this.repositoryFor(manager).findOne({
+      where: {
+        id: tokenId,
+        projectId,
+        revokedAt: IsNull()
+      }
+    });
+  }
+
+  async save(
+    token: ProjectPersonalAccessTokenEntity,
+    manager?: EntityManager
+  ): Promise<ProjectPersonalAccessTokenEntity> {
+    this.logger.debug('Saving project personal access token record', {
+      projectId: token.projectId,
+      tokenId: token.id,
+      userId: token.userId
+    });
+
+    const savedToken = await this.repositoryFor(manager).save(token);
+
+    this.logger.log('Project personal access token record saved', {
       projectId: savedToken.projectId,
       tokenId: savedToken.id,
       userId: savedToken.userId

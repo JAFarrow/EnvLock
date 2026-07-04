@@ -17,6 +17,7 @@ type PersonalAccessTokensServiceMock = {
     Promise<ProjectPersonalAccessTokenResponseDto>,
     [string, string, CreateProjectPersonalAccessTokenDto]
   >;
+  revoke: jest.Mock<Promise<void>, [string, string, string]>;
 };
 
 type ConfigServiceMock = {
@@ -25,8 +26,9 @@ type ConfigServiceMock = {
 
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
+const tokenId = 'a65de020-3ac3-4f9d-b3df-3cde79de0511';
 const tokenResponse: ProjectPersonalAccessTokenResponseDto = {
-  id: 'a65de020-3ac3-4f9d-b3df-3cde79de0511',
+  id: tokenId,
   projectId,
   name: 'local dev laptop',
   token: 'envlock_pat_a65de020-3ac3-4f9d-b3df-3cde79de0511.secret',
@@ -51,7 +53,8 @@ describe('ProjectPersonalAccessTokensController', () => {
       create: jest.fn<
         Promise<ProjectPersonalAccessTokenResponseDto>,
         [string, string, CreateProjectPersonalAccessTokenDto]
-      >(() => Promise.resolve(tokenResponse))
+      >(() => Promise.resolve(tokenResponse)),
+      revoke: jest.fn<Promise<void>, [string, string, string]>(() => Promise.resolve())
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -122,6 +125,28 @@ describe('ProjectPersonalAccessTokensController', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ name: '', expiresAt: '2026-09-04T12:00:00.000Z' })
       .expect(400);
+    await request(server)
+      .delete(`/projects/${projectId}/pats/not-a-uuid`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+  });
+
+  it('revokes project-scoped PATs for the authenticated user', async () => {
+    await expect(controller.revoke(createRequest(), projectId, tokenId)).resolves.toBeUndefined();
+
+    expect(service.revoke).toHaveBeenCalledWith(userId, projectId, tokenId);
+  });
+
+  it('returns 204 when revoking a PAT over HTTP', async () => {
+    await initHttpApp();
+
+    const token = await new JwtService({ secret: 'test-secret' }).signAsync({ sub: userId });
+    const server = app?.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .delete(`/projects/${projectId}/pats/${tokenId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
   });
 
   it('returns the expected HTTP status and one-time raw token response', async () => {

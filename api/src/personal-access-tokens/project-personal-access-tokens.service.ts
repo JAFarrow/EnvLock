@@ -1,6 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
+import { ProjectRole } from '../projects/entities/project-role.enum';
 import { ProjectAccessService } from '../projects/project-access.service';
 import { type CreateProjectPersonalAccessTokenDto } from './contracts/create-project-personal-access-token.dto';
 import {
@@ -42,6 +48,32 @@ export class ProjectPersonalAccessTokensService {
     });
 
     return toProjectPersonalAccessTokenResponse(token, rawToken);
+  }
+
+  async revoke(actorUserId: string, projectId: string, tokenId: string): Promise<void> {
+    const membership = await this.projectAccessService.findAccessibleActiveMembership(
+      actorUserId,
+      projectId
+    );
+    const token = await this.personalAccessTokenRepository.findUnrevokedByProjectAndId(
+      projectId,
+      tokenId
+    );
+
+    if (token === null) {
+      throw new NotFoundException('Personal access token not found');
+    }
+
+    const canRevokeAnyToken =
+      membership.role === ProjectRole.OWNER || membership.role === ProjectRole.MAINTAINER;
+
+    if (!canRevokeAnyToken && token.userId !== actorUserId) {
+      throw new ForbiddenException('Developers can only revoke their own personal access tokens');
+    }
+
+    token.revokedAt = new Date();
+
+    await this.personalAccessTokenRepository.save(token);
   }
 
   private parseAndValidateExpiration(expiresAtInput: string): Date {
