@@ -1,12 +1,11 @@
 import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { applyApiPrefix } from '../../api-prefix';
-import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { applyApiPrefix } from '../../main';
 import { type AddProjectMemberDto } from '../../projects/contracts/add-project-member.dto';
 import { type ProjectMemberListResponseDto } from '../../projects/contracts/project-member-list.response.dto';
 import { type ProjectMemberResponseDto } from '../../projects/contracts/project-member.response.dto';
@@ -25,13 +24,10 @@ type ProjectMembershipsServiceMock = {
   remove: jest.Mock<Promise<void>, [string, string, string]>;
 };
 
-type ConfigServiceMock = {
-  get: jest.Mock<string, ['JWT_SECRET', { infer: true }]>;
-};
-
 const actorUserId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
 const memberUserId = '0a8d4a1f-d93d-4a6d-9ec4-6c2d688f0c79';
+const accessTokenCookieName = 'test_access_token';
 
 const memberResponse: ProjectMemberResponseDto = {
   userId: memberUserId,
@@ -191,18 +187,12 @@ describe('ProjectMembershipsController', () => {
   });
 
   async function initHttpApp(): Promise<void> {
-    const configService: ConfigServiceMock = {
-      get: jest.fn<string, ['JWT_SECRET', { infer: true }]>(() => 'test-secret')
-    };
     const module: TestingModule = await Test.createTestingModule({
-      imports: [PassportModule],
+      imports: [JwtModule.register({ secret: 'test-secret' })],
       controllers: [ProjectMembershipsController],
       providers: [
-        JwtStrategy,
-        {
-          provide: ConfigService,
-          useValue: configService
-        },
+        JwtAuthGuard,
+        createConfigServiceProvider(),
         {
           provide: ProjectMembershipsService,
           useValue: projectMembershipsService
@@ -219,3 +209,14 @@ describe('ProjectMembershipsController', () => {
     return new JwtService({ secret: 'test-secret' }).signAsync({ sub: actorUserId });
   }
 });
+
+function createConfigServiceProvider(): { provide: typeof ConfigService; useValue: unknown } {
+  return {
+    provide: ConfigService,
+    useValue: {
+      get: jest.fn<string, ['JWT_ACCESS_TOKEN_COOKIE_NAME', { infer: true }]>(
+        () => accessTokenCookieName
+      )
+    }
+  };
+}

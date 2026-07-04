@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Register | EnvLock</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/auth.js"></script>
+  </head>
+  <body>
+    <main class="auth-shell">
+      <section class="auth-card" aria-labelledby="register-title">
+        <p class="eyebrow">EnvLock</p>
+        <h1 id="register-title">Create your account</h1>
+        <p class="lede">Start managing environment-scoped secrets from one place.</p>
+
+        <div id="form-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <form id="register-form" data-auth-form="register" novalidate>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required />
+
+          <label for="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            minlength="12"
+            required
+          />
+          <p class="hint">Use at least 12 characters.</p>
+
+          <button type="submit">Register</button>
+        </form>
+
+        <p class="switch-link">Already have an account? <a href="/login">Log in</a></p>
+      </section>
+    </main>
+  </body>
+</html>

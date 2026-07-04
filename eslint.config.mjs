@@ -9,6 +9,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/dist/**',
       '**/node_modules/**',
+      'api/src/frontend/assets/**/*.js',
       '**/*.config.*',
       'package-lock.json'
     ]

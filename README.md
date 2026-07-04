@@ -31,6 +31,7 @@ Supported environment variables:
 - `DATABASE_URL`: Postgres connection URL; required
 - `JWT_SECRET`: secret used to sign API bearer tokens; required
 - `JWT_ACCESS_TOKEN_TTL_SECONDS`: access token lifetime in seconds; defaults to `3600`
+- `JWT_ACCESS_TOKEN_COOKIE_NAME`: cookie name for browser access tokens; defaults to `envlock_access_token`
 - `SECRET_ENCRYPTION_KEY_BASE64`: exactly 32 random bytes encoded as Base64; required
 - `SECRET_ENCRYPTION_KEY_VERSION`: positive integer version for the active secret encryption key; required
 

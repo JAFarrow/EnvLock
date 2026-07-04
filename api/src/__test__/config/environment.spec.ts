@@ -23,6 +23,7 @@ describe('validateEnvironment', () => {
       DATABASE_URL: databaseUrl,
       JWT_SECRET: jwtSecret,
       JWT_ACCESS_TOKEN_TTL_SECONDS: 3600,
+      JWT_ACCESS_TOKEN_COOKIE_NAME: 'envlock_access_token',
       SECRET_ENCRYPTION_KEY_BASE64: secretEncryptionKeyBase64,
       SECRET_ENCRYPTION_KEY_VERSION: 1
     });
@@ -49,6 +50,7 @@ describe('validateEnvironment', () => {
           PORT: '4000',
           LOG_FORMAT: 'json',
           JWT_ACCESS_TOKEN_TTL_SECONDS: '7200',
+          JWT_ACCESS_TOKEN_COOKIE_NAME: 'custom_access_token',
           SECRET_ENCRYPTION_KEY_VERSION: '2'
         })
       )
@@ -59,6 +61,7 @@ describe('validateEnvironment', () => {
       DATABASE_URL: databaseUrl,
       JWT_SECRET: jwtSecret,
       JWT_ACCESS_TOKEN_TTL_SECONDS: 7200,
+      JWT_ACCESS_TOKEN_COOKIE_NAME: 'custom_access_token',
       SECRET_ENCRYPTION_KEY_VERSION: 2
     });
   });
@@ -118,6 +121,9 @@ describe('validateEnvironment', () => {
     );
     expect(() =>
       validateEnvironment(validEnvironment({ JWT_ACCESS_TOKEN_TTL_SECONDS: '0' }))
+    ).toThrow('Invalid environment configuration');
+    expect(() =>
+      validateEnvironment(validEnvironment({ JWT_ACCESS_TOKEN_COOKIE_NAME: '' }))
     ).toThrow('Invalid environment configuration');
   });
 });

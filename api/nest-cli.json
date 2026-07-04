@@ -3,6 +3,14 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "assets": [
+      {
+        "include": "frontend/**/*.html"
+      },
+      {
+        "include": "frontend/assets/**/*"
+      }
+    ],
     "deleteOutDir": true
   }
 }

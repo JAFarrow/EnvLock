@@ -3,9 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { applyApiPrefix } from '../../api-prefix';
 import { HealthController } from '../../health/health.controller';
 import { HealthService } from '../../health/health.service';
+import { applyApiPrefix } from '../../main';
 
 type DataSourceMock = Pick<DataSource, 'query'>;
 

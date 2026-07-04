@@ -24,6 +24,7 @@ export const environmentSchema = z
     DATABASE_URL: z.url().startsWith('postgres://').or(z.url().startsWith('postgresql://')),
     JWT_SECRET: z.string().min(1),
     JWT_ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(1).default(3600),
+    JWT_ACCESS_TOKEN_COOKIE_NAME: z.string().trim().min(1).default('envlock_access_token'),
     SECRET_ENCRYPTION_KEY_BASE64: z
       .string()
       .refine(isValidBase64, 'must be valid Base64')

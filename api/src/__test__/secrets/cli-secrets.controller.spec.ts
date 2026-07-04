@@ -2,9 +2,9 @@ import { type INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedPersonalAccessTokenRequest } from '../../auth/contracts/personal-access-token-request';
 import { PersonalAccessTokenAuthGuard } from '../../auth/guards/personal-access-token-auth.guard';
+import { applyApiPrefix } from '../../main';
 import { CliSecretsController } from '../../secrets/cli-secrets.controller';
 import { type CliSecretValuesResponseDto } from '../../secrets/contracts/cli-secret-values.response.dto';
 import { SecretsService } from '../../secrets/secrets.service';

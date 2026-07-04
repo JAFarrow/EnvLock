@@ -1,13 +1,12 @@
 import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
-import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { applyApiPrefix } from '../../main';
 import { type CreateEnvironmentDto } from '../../environments/contracts/create-environment.dto';
 import {
   type EnvironmentListResponseDto,
@@ -31,13 +30,10 @@ type EnvironmentsServiceMock = {
   archiveEnvironment: jest.Mock<Promise<void>, [string, string, string]>;
 };
 
-type ConfigServiceMock = {
-  get: jest.Mock<string, ['JWT_SECRET', { infer: true }]>;
-};
-
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
 const environmentId = '7ea93715-1cc6-428d-937f-e7d8eec105dc';
+const accessTokenCookieName = 'test_access_token';
 
 const environmentResponse: EnvironmentResponseDto = {
   id: environmentId,
@@ -80,8 +76,11 @@ describe('EnvironmentsController', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [JwtModule.register({ secret: 'test-secret' })],
       controllers: [EnvironmentsController],
       providers: [
+        JwtAuthGuard,
+        createConfigServiceProvider(),
         {
           provide: EnvironmentsService,
           useValue: environmentsService
@@ -203,18 +202,12 @@ describe('EnvironmentsController', () => {
   });
 
   async function initHttpApp(): Promise<void> {
-    const configService: ConfigServiceMock = {
-      get: jest.fn<string, ['JWT_SECRET', { infer: true }]>(() => 'test-secret')
-    };
     const module = await Test.createTestingModule({
-      imports: [PassportModule],
+      imports: [JwtModule.register({ secret: 'test-secret' })],
       controllers: [EnvironmentsController],
       providers: [
-        JwtStrategy,
-        {
-          provide: ConfigService,
-          useValue: configService
-        },
+        JwtAuthGuard,
+        createConfigServiceProvider(),
         {
           provide: EnvironmentsService,
           useValue: environmentsService
@@ -227,3 +220,14 @@ describe('EnvironmentsController', () => {
     await app.init();
   }
 });
+
+function createConfigServiceProvider(): { provide: typeof ConfigService; useValue: unknown } {
+  return {
+    provide: ConfigService,
+    useValue: {
+      get: jest.fn<string, ['JWT_ACCESS_TOKEN_COOKIE_NAME', { infer: true }]>(
+        () => accessTokenCookieName
+      )
+    }
+  };
+}

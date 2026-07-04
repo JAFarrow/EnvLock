@@ -1,13 +1,12 @@
 import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { applyApiPrefix } from '../../api-prefix';
 import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-request';
-import { JwtStrategy } from '../../auth/strategies/jwt.strategy';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { applyApiPrefix } from '../../main';
 import { type CreatePersonalAccessTokenDto } from '../../personal-access-tokens/contracts/create-personal-access-token.dto';
 import { type PersonalAccessTokenResponseDto } from '../../personal-access-tokens/contracts/personal-access-token.response.dto';
 import { PersonalAccessTokensController } from '../../personal-access-tokens/personal-access-tokens.controller';
@@ -21,13 +20,10 @@ type PersonalAccessTokensServiceMock = {
   revoke: jest.Mock<Promise<void>, [string, string, string]>;
 };
 
-type ConfigServiceMock = {
-  get: jest.Mock<string, ['JWT_SECRET', { infer: true }]>;
-};
-
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
 const tokenId = 'a65de020-3ac3-4f9d-b3df-3cde79de0511';
+const accessTokenCookieName = 'test_access_token';
 const tokenResponse: PersonalAccessTokenResponseDto = {
   id: tokenId,
   projectId,
@@ -59,8 +55,11 @@ describe('PersonalAccessTokensController', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [JwtModule.register({ secret: 'test-secret' })],
       controllers: [PersonalAccessTokensController],
       providers: [
+        JwtAuthGuard,
+        createConfigServiceProvider(),
         {
           provide: PersonalAccessTokensService,
           useValue: service
@@ -170,18 +169,12 @@ describe('PersonalAccessTokensController', () => {
   });
 
   async function initHttpApp(): Promise<void> {
-    const configService: ConfigServiceMock = {
-      get: jest.fn<string, ['JWT_SECRET', { infer: true }]>(() => 'test-secret')
-    };
     const module = await Test.createTestingModule({
-      imports: [PassportModule],
+      imports: [JwtModule.register({ secret: 'test-secret' })],
       controllers: [PersonalAccessTokensController],
       providers: [
-        JwtStrategy,
-        {
-          provide: ConfigService,
-          useValue: configService
-        },
+        JwtAuthGuard,
+        createConfigServiceProvider(),
         {
           provide: PersonalAccessTokensService,
           useValue: service
@@ -194,3 +187,14 @@ describe('PersonalAccessTokensController', () => {
     await app.init();
   }
 });
+
+function createConfigServiceProvider(): { provide: typeof ConfigService; useValue: unknown } {
+  return {
+    provide: ConfigService,
+    useValue: {
+      get: jest.fn<string, ['JWT_ACCESS_TOKEN_COOKIE_NAME', { infer: true }]>(
+        () => accessTokenCookieName
+      )
+    }
+  };
+}

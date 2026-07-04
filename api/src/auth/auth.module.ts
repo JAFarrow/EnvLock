@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EnvironmentVariables } from '../config/environment';
@@ -16,12 +15,10 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PersonalAccessTokenAuthGuard } from './guards/personal-access-token-auth.guard';
 import { PasswordHasher } from './password/password-hasher';
 import { PersonalAccessTokenAuthService } from './personal-access-token-auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
     UsersModule,
-    PassportModule,
     TypeOrmModule.forFeature([PersonalAccessTokenEntity, ProjectMembershipEntity]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -37,13 +34,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   providers: [
     AuthService,
     PasswordHasher,
-    JwtStrategy,
     PersonalAccessTokenAuthService,
     PersonalAccessTokenRepository,
     ProjectMembershipsRepository,
     JwtAuthGuard,
     PersonalAccessTokenAuthGuard
   ],
-  exports: [JwtAuthGuard, PersonalAccessTokenAuthGuard, PersonalAccessTokenAuthService]
+  exports: [JwtModule, JwtAuthGuard, PersonalAccessTokenAuthGuard, PersonalAccessTokenAuthService]
 })
 export class AuthModule {}
