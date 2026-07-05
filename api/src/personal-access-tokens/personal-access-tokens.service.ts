@@ -10,7 +10,9 @@ import { ProjectRole } from '../projects/entities/project-role.enum';
 import { ProjectAccessService } from '../projects/project-access.service';
 import { type CreatePersonalAccessTokenDto } from './contracts/create-personal-access-token.dto';
 import {
+  type PersonalAccessTokenListResponseDto,
   type PersonalAccessTokenResponseDto,
+  toPersonalAccessTokenListItemResponse,
   toPersonalAccessTokenResponse
 } from './contracts/personal-access-token.response.dto';
 import {
@@ -28,6 +30,22 @@ export class PersonalAccessTokensService {
     private readonly projectAccessService: ProjectAccessService,
     private readonly personalAccessTokenRepository: PersonalAccessTokenRepository
   ) {}
+
+  async list(userId: string, projectId: string): Promise<PersonalAccessTokenListResponseDto> {
+    const membership = await this.projectAccessService.findAccessibleActiveMembership(
+      userId,
+      projectId
+    );
+    const canListAllTokens =
+      membership.role === ProjectRole.OWNER || membership.role === ProjectRole.MAINTAINER;
+    const tokens = canListAllTokens
+      ? await this.personalAccessTokenRepository.findUnrevokedByProjectId(projectId)
+      : await this.personalAccessTokenRepository.findUnrevokedByProjectAndUserId(projectId, userId);
+
+    return {
+      items: tokens.map(toPersonalAccessTokenListItemResponse)
+    };
+  }
 
   async create(
     userId: string,

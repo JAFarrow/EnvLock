@@ -35,7 +35,7 @@ function createUser(overrides: Partial<UserEntity> = {}): UserEntity {
     id: '9942365e-cb78-4f24-9f33-5b4a821759a4',
     email: 'user@example.com',
     passwordHash: 'hashed-password',
-    status: 'pending',
+    status: 'active',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides
@@ -85,7 +85,7 @@ describe('AuthService', () => {
     jest.restoreAllMocks();
   });
 
-  it('registers a pending user with a hashed password', async () => {
+  it('registers an active user with a hashed password', async () => {
     const result = await authService.register({
       email: 'new@example.com',
       password: 'long-password'
@@ -96,12 +96,12 @@ describe('AuthService', () => {
     expect(usersRepository.create).toHaveBeenCalledWith({
       email: 'new@example.com',
       passwordHash: 'hashed-password',
-      status: 'pending'
+      status: 'active'
     });
     expect(result).toEqual({
       id: '9942365e-cb78-4f24-9f33-5b4a821759a4',
       email: 'new@example.com',
-      status: 'pending',
+      status: 'active',
       createdAt: new Date('2026-01-01T00:00:00.000Z')
     });
     expect(result).not.toHaveProperty('passwordHash');
@@ -161,18 +161,6 @@ describe('AuthService', () => {
       status: 'active'
     });
     expect(configService.get).toHaveBeenCalledWith('JWT_ACCESS_TOKEN_TTL_SECONDS', { infer: true });
-  });
-
-  it('allows pending users to log in', async () => {
-    usersRepository.findByEmail.mockResolvedValueOnce(createUser({ status: 'pending' }));
-
-    await expect(
-      authService.login({ email: 'user@example.com', password: 'long-password' })
-    ).resolves.toMatchObject({
-      user: {
-        status: 'pending'
-      }
-    });
   });
 
   it('does not expose password hashes in login responses', async () => {

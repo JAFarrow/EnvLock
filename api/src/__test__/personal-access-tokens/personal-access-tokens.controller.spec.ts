@@ -8,11 +8,15 @@ import { type AuthenticatedRequest } from '../../auth/contracts/authenticated-re
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { applyApiPrefix } from '../../main';
 import { type CreatePersonalAccessTokenDto } from '../../personal-access-tokens/contracts/create-personal-access-token.dto';
-import { type PersonalAccessTokenResponseDto } from '../../personal-access-tokens/contracts/personal-access-token.response.dto';
+import {
+  type PersonalAccessTokenListResponseDto,
+  type PersonalAccessTokenResponseDto
+} from '../../personal-access-tokens/contracts/personal-access-token.response.dto';
 import { PersonalAccessTokensController } from '../../personal-access-tokens/personal-access-tokens.controller';
 import { PersonalAccessTokensService } from '../../personal-access-tokens/personal-access-tokens.service';
 
 type PersonalAccessTokensServiceMock = {
+  list: jest.Mock<Promise<PersonalAccessTokenListResponseDto>, [string, string]>;
   create: jest.Mock<
     Promise<PersonalAccessTokenResponseDto>,
     [string, string, CreatePersonalAccessTokenDto]
@@ -33,6 +37,21 @@ const tokenResponse: PersonalAccessTokenResponseDto = {
   expiresAt: '2026-09-04T12:00:00.000Z',
   createdAt: '2026-07-04T12:00:00.000Z'
 };
+const tokenListResponse: PersonalAccessTokenListResponseDto = {
+  items: [
+    {
+      id: tokenId,
+      projectId,
+      userId,
+      userEmail: 'user@example.com',
+      name: 'local dev laptop',
+      tokenLastFour: 'cret',
+      expiresAt: '2026-09-04T12:00:00.000Z',
+      lastUsedAt: null,
+      createdAt: '2026-07-04T12:00:00.000Z'
+    }
+  ]
+};
 
 function createRequest(): AuthenticatedRequest {
   return {
@@ -47,6 +66,9 @@ describe('PersonalAccessTokensController', () => {
 
   beforeEach(async () => {
     service = {
+      list: jest.fn<Promise<PersonalAccessTokenListResponseDto>, [string, string]>(() =>
+        Promise.resolve(tokenListResponse)
+      ),
       create: jest.fn<
         Promise<PersonalAccessTokenResponseDto>,
         [string, string, CreatePersonalAccessTokenDto]
@@ -93,6 +115,12 @@ describe('PersonalAccessTokensController', () => {
     });
   });
 
+  it('lists visible project-scoped PATs for the authenticated user', async () => {
+    await expect(controller.list(createRequest(), projectId)).resolves.toBe(tokenListResponse);
+
+    expect(service.list).toHaveBeenCalledWith(userId, projectId);
+  });
+
   it('rejects unauthenticated HTTP requests', async () => {
     await initHttpApp();
 
@@ -102,6 +130,7 @@ describe('PersonalAccessTokensController', () => {
       .post(`/api/projects/${projectId}/pats`)
       .send({ name: 'local dev laptop', expiresAt: '2026-09-04T12:00:00.000Z' })
       .expect(401);
+    await request(server).get(`/api/projects/${projectId}/pats`).expect(401);
   });
 
   it('returns 400 for invalid route UUIDs and invalid bodies', async () => {
@@ -114,6 +143,10 @@ describe('PersonalAccessTokensController', () => {
       .post('/api/projects/not-a-uuid/pats')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'local dev laptop', expiresAt: '2026-09-04T12:00:00.000Z' })
+      .expect(400);
+    await request(server)
+      .get('/api/projects/not-a-uuid/pats')
+      .set('Authorization', `Bearer ${token}`)
       .expect(400);
     await request(server)
       .post(`/api/projects/${projectId}/pats`)
@@ -166,6 +199,24 @@ describe('PersonalAccessTokensController', () => {
     expect(response.body).not.toHaveProperty('tokenHash');
     expect(response.body).not.toHaveProperty('tokenLastFour');
     expect(response.body).not.toHaveProperty('environmentId');
+  });
+
+  it('returns visible PATs over HTTP without sensitive token fields', async () => {
+    await initHttpApp();
+
+    const token = await new JwtService({ secret: 'test-secret' }).signAsync({ sub: userId });
+    const server = app?.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(server)
+      .get(`/api/projects/${projectId}/pats`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const body = response.body as PersonalAccessTokenListResponseDto;
+
+    expect(body).toEqual(tokenListResponse);
+    expect(body.items[0]).not.toHaveProperty('token');
+    expect(body.items[0]).not.toHaveProperty('tokenHash');
   });
 
   async function initHttpApp(): Promise<void> {

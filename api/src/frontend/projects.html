@@ -8,17 +8,51 @@
     <script type="module" src="/assets/projects.js"></script>
   </head>
   <body>
-    <main class="page-shell">
-      <section class="panel" aria-labelledby="projects-title">
-        <p class="eyebrow">EnvLock</p>
-        <h1 id="projects-title">Projects</h1>
-        <p id="projects-status" class="lede">Checking your session...</p>
+    <main class="page-shell projects-shell">
+      <section class="workspace" aria-labelledby="projects-title">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">EnvLock</p>
+            <h1 id="projects-title">Projects</h1>
+            <p id="projects-status" class="lede">Checking your session...</p>
+          </div>
+        </header>
 
-        <div class="placeholder">
-          <h2>Projects UI coming soon</h2>
-          <p>
-            This page is wired for cookie-authenticated API access and ready for the next UI step.
-          </p>
+        <div id="projects-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <div class="projects-overview-layout">
+          <section class="management-card" aria-labelledby="project-list-title">
+            <div class="section-header compact">
+              <div>
+                <h2 id="project-list-title">Scoped Projects</h2>
+                <p>Create projects and open dedicated management pages.</p>
+              </div>
+            </div>
+
+            <div id="project-list" class="project-list project-grid" aria-live="polite"></div>
+          </section>
+
+          <aside class="management-card" aria-labelledby="create-project-title">
+            <form id="create-project-form" class="card-form standalone-form" novalidate>
+              <h2 id="create-project-title">Create Project</h2>
+
+              <label for="project-name">Name</label>
+              <input id="project-name" name="name" maxlength="120" required />
+
+              <label for="project-description">Description</label>
+              <textarea
+                id="project-description"
+                name="description"
+                maxlength="500"
+                rows="3"
+              ></textarea>
+
+              <label for="project-repository-url">Repository URL</label>
+              <input id="project-repository-url" name="repositoryUrl" maxlength="2048" />
+
+              <button type="submit">Create project</button>
+            </form>
+          </aside>
         </div>
       </section>
     </main>

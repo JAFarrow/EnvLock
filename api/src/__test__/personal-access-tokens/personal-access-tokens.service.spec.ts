@@ -12,6 +12,7 @@ import { ProjectRole } from '../../projects/entities/project-role.enum';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { ProjectAccessService } from '../../projects/project-access.service';
 import { ProjectMembershipsRepository } from '../../projects/repositories/project-memberships.repository';
+import { UserEntity } from '../../users/entities/user.entity';
 
 type ProjectMembershipsRepositoryMock = {
   findActiveProjectByProjectAndUser: jest.Mock<
@@ -22,6 +23,11 @@ type ProjectMembershipsRepositoryMock = {
 
 type PersonalAccessTokenRepositoryMock = {
   create: jest.Mock<Promise<PersonalAccessTokenEntity>, [CreatePersonalAccessTokenRecord]>;
+  findUnrevokedByProjectId: jest.Mock<Promise<PersonalAccessTokenEntity[]>, [string]>;
+  findUnrevokedByProjectAndUserId: jest.Mock<
+    Promise<PersonalAccessTokenEntity[]>,
+    [string, string]
+  >;
   findUnrevokedByProjectAndId: jest.Mock<
     Promise<PersonalAccessTokenEntity | null>,
     [string, string]
@@ -70,10 +76,21 @@ function createMembership(
 function createPersonalAccessToken(
   overrides: Partial<PersonalAccessTokenEntity> = {}
 ): PersonalAccessTokenEntity {
+  const user =
+    overrides.user ??
+    Object.assign(new UserEntity(), {
+      id: overrides.userId ?? userId,
+      email: 'user@example.com',
+      passwordHash: 'hashed-password',
+      status: 'active',
+      createdAt: now,
+      updatedAt: now
+    });
+
   return Object.assign(new PersonalAccessTokenEntity(), {
     id: tokenId,
     projectId,
-    userId,
+    userId: user.id,
     name: 'local dev laptop',
     tokenHash: 'a'.repeat(64),
     tokenLastFour: 'last',
@@ -82,6 +99,7 @@ function createPersonalAccessToken(
     revokedAt: null,
     createdAt: now,
     updatedAt: now,
+    user,
     ...overrides
   });
 }
@@ -104,6 +122,13 @@ describe('PersonalAccessTokensService', () => {
       create: jest.fn<Promise<PersonalAccessTokenEntity>, [CreatePersonalAccessTokenRecord]>(
         (input) => Promise.resolve(createPersonalAccessToken(input))
       ),
+      findUnrevokedByProjectId: jest.fn<Promise<PersonalAccessTokenEntity[]>, [string]>(() =>
+        Promise.resolve([createPersonalAccessToken()])
+      ),
+      findUnrevokedByProjectAndUserId: jest.fn<
+        Promise<PersonalAccessTokenEntity[]>,
+        [string, string]
+      >(() => Promise.resolve([createPersonalAccessToken()])),
       findUnrevokedByProjectAndId: jest.fn<
         Promise<PersonalAccessTokenEntity | null>,
         [string, string]
@@ -145,6 +170,81 @@ describe('PersonalAccessTokensService', () => {
       projectId,
       userId
     );
+  });
+
+  it.each([ProjectRole.OWNER, ProjectRole.MAINTAINER])(
+    'allows %s members to list all unrevoked project PATs',
+    async (role) => {
+      projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+        createMembership({ role })
+      );
+      const otherUser = Object.assign(new UserEntity(), {
+        id: otherUserId,
+        email: 'other@example.com',
+        passwordHash: 'hashed-password',
+        status: 'active',
+        createdAt: now,
+        updatedAt: now
+      });
+      personalAccessTokenRepository.findUnrevokedByProjectId.mockResolvedValueOnce([
+        createPersonalAccessToken({ user: otherUser, userId: otherUser.id })
+      ]);
+
+      await expect(service.list(userId, projectId)).resolves.toEqual({
+        items: [
+          {
+            id: tokenId,
+            projectId,
+            userId: otherUserId,
+            userEmail: 'other@example.com',
+            name: 'local dev laptop',
+            tokenLastFour: 'last',
+            expiresAt: '2026-09-04T12:00:00.000Z',
+            lastUsedAt: null,
+            createdAt: '2026-07-04T12:00:00.000Z'
+          }
+        ]
+      });
+
+      expect(personalAccessTokenRepository.findUnrevokedByProjectId).toHaveBeenCalledWith(
+        projectId
+      );
+      expect(personalAccessTokenRepository.findUnrevokedByProjectAndUserId).not.toHaveBeenCalled();
+    }
+  );
+
+  it('allows developers to list only their own unrevoked project PATs', async () => {
+    await expect(service.list(userId, projectId)).resolves.toMatchObject({
+      items: [
+        {
+          userId,
+          userEmail: 'user@example.com',
+          tokenLastFour: 'last'
+        }
+      ]
+    });
+
+    expect(personalAccessTokenRepository.findUnrevokedByProjectAndUserId).toHaveBeenCalledWith(
+      projectId,
+      userId
+    );
+    expect(personalAccessTokenRepository.findUnrevokedByProjectId).not.toHaveBeenCalled();
+  });
+
+  it('does not expose raw or hashed token values when listing PATs', async () => {
+    const response = await service.list(userId, projectId);
+
+    expect(response.items[0]).not.toHaveProperty('token');
+    expect(response.items[0]).not.toHaveProperty('tokenHash');
+  });
+
+  it('returns 404 when a non-member lists PATs', async () => {
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(null);
+
+    await expect(service.list(userId, projectId)).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(personalAccessTokenRepository.findUnrevokedByProjectId).not.toHaveBeenCalled();
+    expect(personalAccessTokenRepository.findUnrevokedByProjectAndUserId).not.toHaveBeenCalled();
   });
 
   it('also allows maintainers and owners to create PATs', async () => {

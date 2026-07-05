@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -18,13 +19,24 @@ import {
   createPersonalAccessTokenSchema,
   type CreatePersonalAccessTokenDto
 } from './contracts/create-personal-access-token.dto';
-import { type PersonalAccessTokenResponseDto } from './contracts/personal-access-token.response.dto';
+import {
+  type PersonalAccessTokenListResponseDto,
+  type PersonalAccessTokenResponseDto
+} from './contracts/personal-access-token.response.dto';
 import { PersonalAccessTokensService } from './personal-access-tokens.service';
 
 @Controller('projects/:projectId/pats')
 @UseGuards(JwtAuthGuard)
 export class PersonalAccessTokensController {
   constructor(private readonly personalAccessTokensService: PersonalAccessTokensService) {}
+
+  @Get()
+  list(
+    @Req() request: AuthenticatedRequest,
+    @Param('projectId', new ParseUUIDPipe()) projectId: string
+  ): Promise<PersonalAccessTokenListResponseDto> {
+    return this.personalAccessTokensService.list(request.user.id, projectId);
+  }
 
   @Post()
   create(

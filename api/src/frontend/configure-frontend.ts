@@ -10,6 +10,17 @@ export function configureFrontend(app: NestExpressApplication): void {
       return;
     }
 
+    const projectSubpageMatch = request.path.match(
+      /^\/projects\/[^/]+\/(environments|roles|pats)$/
+    );
+
+    const projectSubpage = projectSubpageMatch?.[1];
+
+    if (projectSubpage !== undefined) {
+      response.sendFile(join(__dirname, `${projectSubpage}.html`));
+      return;
+    }
+
     next();
   });
 

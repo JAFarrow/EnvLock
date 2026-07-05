@@ -7,12 +7,12 @@ import {
   UpdateDateColumn
 } from 'typeorm';
 
-export const userStatuses = ['pending', 'active', 'disabled'] as const;
+export const userStatuses = ['active', 'disabled'] as const;
 
 export type UserStatus = (typeof userStatuses)[number];
 
 @Entity({ name: 'users' })
-@Check('CHK_users_status', `"status" IN ('pending', 'active', 'disabled')`)
+@Check('CHK_users_status', `"status" IN ('active', 'disabled')`)
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

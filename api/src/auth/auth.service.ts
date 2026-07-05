@@ -65,7 +65,7 @@ export class AuthService {
     const user = await this.usersRepository.create({
       email: input.email,
       passwordHash,
-      status: 'pending'
+      status: 'active'
     });
 
     this.logger.log('User registered', {

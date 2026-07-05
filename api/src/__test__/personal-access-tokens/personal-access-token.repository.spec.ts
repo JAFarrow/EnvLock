@@ -1,7 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { type EntityManager, type FindOneOptions, type Repository } from 'typeorm';
+import {
+  type EntityManager,
+  type FindManyOptions,
+  type FindOneOptions,
+  type Repository
+} from 'typeorm';
 
 import { PersonalAccessTokenEntity } from '../../personal-access-tokens/entities/personal-access-token.entity';
 import {
@@ -15,6 +20,10 @@ type TypeOrmPersonalAccessTokenRepositoryMock = {
   findOne: jest.Mock<
     Promise<PersonalAccessTokenEntity | null>,
     [FindOneOptions<PersonalAccessTokenEntity>]
+  >;
+  find: jest.Mock<
+    Promise<PersonalAccessTokenEntity[]>,
+    [FindManyOptions<PersonalAccessTokenEntity>]
   >;
 };
 
@@ -68,7 +77,11 @@ function createTypeOrmRepository(): TypeOrmPersonalAccessTokenRepositoryMock {
     findOne: jest.fn<
       Promise<PersonalAccessTokenEntity | null>,
       [FindOneOptions<PersonalAccessTokenEntity>]
-    >(() => Promise.resolve(null))
+    >(() => Promise.resolve(null)),
+    find: jest.fn<
+      Promise<PersonalAccessTokenEntity[]>,
+      [FindManyOptions<PersonalAccessTokenEntity>]
+    >(() => Promise.resolve([]))
   };
 }
 
@@ -152,6 +165,28 @@ describe('PersonalAccessTokenRepository', () => {
     expect(findOptions?.where).toMatchObject({ id: tokenId, tokenHash: 'a'.repeat(64) });
     expect(findOptions?.where).toHaveProperty('revokedAt');
     expect(findOptions?.where).toHaveProperty('expiresAt');
+  });
+
+  it('finds unrevoked PATs by project with users', async () => {
+    await repository.findUnrevokedByProjectId(projectId);
+
+    const findOptions = typeOrmRepository.find.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ projectId });
+    expect(findOptions?.where).toHaveProperty('revokedAt');
+    expect(findOptions?.relations).toEqual({ user: true });
+    expect(findOptions?.order).toEqual({ createdAt: 'DESC' });
+  });
+
+  it('finds unrevoked PATs by project and user with users', async () => {
+    await repository.findUnrevokedByProjectAndUserId(projectId, userId);
+
+    const findOptions = typeOrmRepository.find.mock.calls[0]?.[0];
+
+    expect(findOptions?.where).toMatchObject({ projectId, userId });
+    expect(findOptions?.where).toHaveProperty('revokedAt');
+    expect(findOptions?.relations).toEqual({ user: true });
+    expect(findOptions?.order).toEqual({ createdAt: 'DESC' });
   });
 
   it('saves PAT records', async () => {

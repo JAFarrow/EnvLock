@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Environments | EnvLock</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/environments.js"></script>
+  </head>
+  <body>
+    <main class="page-shell projects-shell">
+      <section class="workspace" aria-labelledby="page-title">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow"><a href="/projects">Projects</a></p>
+            <h1 id="page-title">Environments</h1>
+            <p id="page-status" class="lede">Loading project...</p>
+          </div>
+          <p id="project-role" class="badge"></p>
+        </header>
+
+        <nav class="subpage-nav" aria-label="Project management pages">
+          <a id="environments-link" href="#" aria-current="page">Environments</a>
+          <a id="roles-link" href="#">Roles</a>
+          <a id="pats-link" href="#">PATs</a>
+        </nav>
+
+        <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <div class="detail-grid">
+          <section class="management-card" aria-labelledby="environments-title">
+            <div class="section-header">
+              <div>
+                <h2 id="environments-title">Project Environments</h2>
+                <p>Create and archive deployment environments.</p>
+              </div>
+            </div>
+
+            <div id="environment-list" class="item-list" aria-live="polite"></div>
+          </section>
+
+          <aside class="management-card" aria-labelledby="create-environment-title">
+            <form id="create-environment-form" class="card-form standalone-form" novalidate>
+              <h2 id="create-environment-title">Create Environment</h2>
+
+              <label for="environment-name">Name</label>
+              <input id="environment-name" name="name" maxlength="80" required />
+
+              <label for="environment-slug">Slug</label>
+              <input
+                id="environment-slug"
+                name="slug"
+                maxlength="80"
+                pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                required
+              />
+              <p class="hint">Use lowercase letters, numbers, and hyphens.</p>
+
+              <label for="environment-description">Description</label>
+              <textarea
+                id="environment-description"
+                name="description"
+                maxlength="500"
+                rows="3"
+              ></textarea>
+
+              <button type="submit">Create environment</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

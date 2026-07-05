@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PATs | EnvLock</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/pats.js"></script>
+  </head>
+  <body>
+    <main class="page-shell projects-shell">
+      <section class="workspace" aria-labelledby="page-title">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow"><a href="/projects">Projects</a></p>
+            <h1 id="page-title">Personal Access Tokens</h1>
+            <p id="page-status" class="lede">Loading project...</p>
+          </div>
+          <p id="project-role" class="badge"></p>
+        </header>
+
+        <nav class="subpage-nav" aria-label="Project management pages">
+          <a id="environments-link" href="#">Environments</a>
+          <a id="roles-link" href="#">Roles</a>
+          <a id="pats-link" href="#" aria-current="page">PATs</a>
+        </nav>
+
+        <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <div id="pat-token-reveal" class="token-reveal" hidden>
+          <h2>Copy this token now</h2>
+          <p>This token is shown once and cannot be recovered later.</p>
+          <div class="token-copy-row">
+            <code id="pat-token-value"></code>
+            <button id="copy-pat-token-button" class="button-small" type="button">
+              Copy token
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <section class="management-card" aria-labelledby="pats-title">
+            <div class="section-header">
+              <div>
+                <h2 id="pats-title">Project Tokens</h2>
+                <p>List and revoke project-scoped CLI tokens.</p>
+              </div>
+            </div>
+
+            <div id="pat-list" class="item-list" aria-live="polite"></div>
+          </section>
+
+          <aside class="management-card" aria-labelledby="create-pat-title">
+            <form id="create-pat-form" class="card-form standalone-form" novalidate>
+              <h2 id="create-pat-title">Create Token</h2>
+
+              <label for="pat-name">Name</label>
+              <input id="pat-name" name="name" maxlength="120" required />
+
+              <label for="pat-expires-at">Expires at</label>
+              <input id="pat-expires-at" name="expiresAt" type="datetime-local" required />
+              <p class="hint">Tokens must expire within 90 days.</p>
+
+              <button type="submit">Create token</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

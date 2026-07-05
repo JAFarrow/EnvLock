@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roles | EnvLock</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/roles.js"></script>
+  </head>
+  <body>
+    <main class="page-shell projects-shell">
+      <section class="workspace" aria-labelledby="page-title">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow"><a href="/projects">Projects</a></p>
+            <h1 id="page-title">Roles</h1>
+            <p id="page-status" class="lede">Loading project...</p>
+          </div>
+          <p id="project-role" class="badge"></p>
+        </header>
+
+        <nav class="subpage-nav" aria-label="Project management pages">
+          <a id="environments-link" href="#">Environments</a>
+          <a id="roles-link" href="#" aria-current="page">Roles</a>
+          <a id="pats-link" href="#">PATs</a>
+        </nav>
+
+        <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <div class="detail-grid">
+          <section class="management-card" aria-labelledby="members-title">
+            <div class="section-header">
+              <div>
+                <h2 id="members-title">Project Roles</h2>
+                <p>Onboard users, revoke access, and assign roles.</p>
+              </div>
+            </div>
+
+            <div id="member-list" class="item-list" aria-live="polite"></div>
+          </section>
+
+          <aside class="management-card" aria-labelledby="add-member-title">
+            <form id="add-member-form" class="card-form standalone-form" novalidate>
+              <h2 id="add-member-title">Add Member</h2>
+
+              <label for="member-email">Email</label>
+              <input id="member-email" name="email" type="email" autocomplete="email" required />
+
+              <label for="member-role">Role</label>
+              <select id="member-role" name="role" required>
+                <option value="developer">Developer</option>
+                <option value="maintainer">Maintainer</option>
+              </select>
+
+              <button type="submit">Add member</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

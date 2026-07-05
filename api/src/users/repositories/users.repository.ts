@@ -19,13 +19,13 @@ export class UsersRepository {
   async create(input: CreateUserRecord): Promise<UserEntity> {
     this.logger.debug('Creating user record', {
       email: input.email,
-      status: input.status ?? 'pending'
+      status: input.status ?? 'active'
     });
 
     const user = this.repository.create({
       email: input.email,
       passwordHash: input.passwordHash,
-      status: input.status ?? 'pending'
+      status: input.status ?? 'active'
     });
 
     const savedUser = await this.repository.save(user);

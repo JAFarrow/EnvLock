@@ -17,7 +17,7 @@ function createUser(overrides: Partial<UserEntity> = {}): UserEntity {
     id: 'f2e93f1e-52d7-4ba0-aa67-5d3719e6b0f4',
     email: 'user@example.com',
     passwordHash: 'hashed-password',
-    status: 'pending',
+    status: 'active',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides
@@ -59,31 +59,31 @@ describe('UsersRepository', () => {
     jest.restoreAllMocks();
   });
 
-  it('creates users with a pending status by default', async () => {
+  it('creates users with an active status by default', async () => {
     await expect(
       usersRepository.create({ email: 'new@example.com', passwordHash: 'hashed-password' })
     ).resolves.toMatchObject({
       email: 'new@example.com',
       passwordHash: 'hashed-password',
-      status: 'pending'
+      status: 'active'
     });
 
     expect(typeOrmRepository.create).toHaveBeenCalledWith({
       email: 'new@example.com',
       passwordHash: 'hashed-password',
-      status: 'pending'
+      status: 'active'
     });
     expect(typeOrmRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'new@example.com', status: 'pending' })
+      expect.objectContaining({ email: 'new@example.com', status: 'active' })
     );
     expect(debugSpy).toHaveBeenCalledWith('Creating user record', {
       email: 'new@example.com',
-      status: 'pending'
+      status: 'active'
     });
     expect(logSpy).toHaveBeenCalledWith('User record created', {
       userId: 'f2e93f1e-52d7-4ba0-aa67-5d3719e6b0f4',
       email: 'new@example.com',
-      status: 'pending'
+      status: 'active'
     });
   });
 

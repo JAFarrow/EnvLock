@@ -64,6 +64,44 @@ export class PersonalAccessTokenRepository {
     });
   }
 
+  async findUnrevokedByProjectId(
+    projectId: string,
+    manager?: EntityManager
+  ): Promise<PersonalAccessTokenEntity[]> {
+    return this.repositoryFor(manager).find({
+      where: {
+        projectId,
+        revokedAt: IsNull()
+      },
+      relations: {
+        user: true
+      },
+      order: {
+        createdAt: 'DESC'
+      }
+    });
+  }
+
+  async findUnrevokedByProjectAndUserId(
+    projectId: string,
+    userId: string,
+    manager?: EntityManager
+  ): Promise<PersonalAccessTokenEntity[]> {
+    return this.repositoryFor(manager).find({
+      where: {
+        projectId,
+        userId,
+        revokedAt: IsNull()
+      },
+      relations: {
+        user: true
+      },
+      order: {
+        createdAt: 'DESC'
+      }
+    });
+  }
+
   async findActiveByIdAndHash(
     tokenId: string,
     tokenHash: string,

@@ -22,7 +22,7 @@ describe('AuthController', () => {
   const registeredUser: RegisteredUser = {
     id: '9942365e-cb78-4f24-9f33-5b4a821759a4',
     email: 'user@example.com',
-    status: 'pending',
+    status: 'active',
     createdAt: new Date('2026-01-01T00:00:00.000Z')
   };
   const loginResult: LoginResult = {
@@ -32,7 +32,7 @@ describe('AuthController', () => {
     user: {
       id: '9942365e-cb78-4f24-9f33-5b4a821759a4',
       email: 'user@example.com',
-      status: 'pending'
+      status: 'active'
     }
   };
 
