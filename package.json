@@ -10,7 +10,7 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "build:api": "npm run build -w @envlock/api",
-    "build:cli": "npm run build -w @envlock/cli",
+    "build:cli": "npm run build -w packages/cli",
     "dev:api": "npm run start:dev -w @envlock/api",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

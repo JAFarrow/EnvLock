@@ -51,6 +51,39 @@ npm run dev:api
 
 The API listens on `http://localhost:3000` by default.
 
+## CLI Usage
+
+The CLI fetches secrets from the EnvLock API with a project personal access token, injects them into a subprocess environment, and runs the requested application command.
+
+Install the CLI from npm:
+
+```sh
+npm install -g @jfarrow777/envlock
+```
+
+Required environment variables:
+
+- `ENVLOCK_API_URL`: EnvLock API URL, for example `http://localhost:3000`
+- `ENVLOCK_PAT`: project personal access token
+
+The environment slug is required for each run. Provide it with `-e` or `--environment`. `ENVLOCK_ENVIRONMENT` is also supported as an optional fallback, but it is not required.
+
+EnvLock does not provide CLI configuration defaults. Missing required configuration fails before the subprocess starts.
+
+Example:
+
+```sh
+ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... envlock run -e development -- npm run dev
+```
+
+Per-run flags can override environment variables:
+
+```sh
+envlock run --api-url http://localhost:3000 -e production -- npm start
+```
+
+The CLI never prints secret values. Prefer `ENVLOCK_PAT` over `--pat` because command-line flags can be stored in shell history or visible in process lists.
+
 ### Build
 
 Build the API:

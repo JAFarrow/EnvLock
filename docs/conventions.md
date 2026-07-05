@@ -5,7 +5,7 @@ This document captures repository conventions for future automated and human dev
 ## Repository Structure
 
 - `api/` contains the `@envlock/api` NestJS API workspace.
-- `packages/cli/` contains the `@envlock/cli` TypeScript package workspace.
+- `packages/cli/` contains the `@jfarrow777/envlock` TypeScript package workspace.
 - `tsconfig.base.json` contains shared TypeScript compiler settings.
 - `eslint.config.mjs` contains the repo-level ESLint flat config.
 - `.prettierrc` contains the repo-level formatting policy.
@@ -78,7 +78,7 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 - Shared development tooling belongs in the root `devDependencies`.
 - Runtime dependencies belong in the workspace that imports them.
 - Install API runtime dependencies with `npm install <package> -w @envlock/api`.
-- Install CLI runtime dependencies with `npm install <package> -w @envlock/cli`.
+- Install CLI runtime dependencies with `npm install <package> -w packages/cli`.
 - Install shared dev dependencies with `npm install --save-dev <package>` from the repository root.
 
 ## Change Safety
