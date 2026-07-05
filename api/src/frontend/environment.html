@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Environment | EnvLock</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/environment.js"></script>
+  </head>
+  <body>
+    <main class="page-shell projects-shell">
+      <section class="workspace" aria-labelledby="page-title">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">
+              <a href="/projects">Projects</a> /
+              <a id="environment-overview-link" href="#">Environments</a>
+            </p>
+            <h1 id="page-title">Environment</h1>
+            <p id="page-status" class="lede">Loading environment...</p>
+          </div>
+          <p id="project-role" class="badge"></p>
+        </header>
+
+        <nav class="subpage-nav" aria-label="Project management pages">
+          <a id="environments-link" href="#" aria-current="page">Environments</a>
+          <a id="roles-link" href="#">Roles</a>
+          <a id="pats-link" href="#">PATs</a>
+        </nav>
+
+        <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <div class="detail-grid">
+          <section class="management-card wide-card" aria-labelledby="environment-title">
+            <div class="section-header compact">
+              <div>
+                <h2 id="environment-title">Environment details</h2>
+                <p id="environment-description">Loading metadata...</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="management-card" aria-labelledby="secrets-title">
+            <div class="section-header">
+              <div>
+                <h2 id="secrets-title">Secret Keys</h2>
+                <p>List keys and set replacement values without revealing stored secrets.</p>
+              </div>
+            </div>
+
+            <div id="secret-list" class="item-list" aria-live="polite"></div>
+          </section>
+
+          <aside class="management-card" aria-labelledby="create-secret-title">
+            <form id="create-secret-form" class="card-form standalone-form" novalidate>
+              <h2 id="create-secret-title">Create Secret</h2>
+
+              <label for="secret-key">Key</label>
+              <input
+                id="secret-key"
+                name="key"
+                maxlength="255"
+                pattern="[A-Z_][A-Z0-9_]*"
+                required
+              />
+              <p class="hint">Use uppercase letters, numbers, and underscores.</p>
+
+              <label for="secret-value">Value</label>
+              <textarea id="secret-value" name="value" rows="4" autocomplete="off"></textarea>
+              <p class="hint">Values are encrypted and cannot be viewed after saving.</p>
+
+              <button type="submit">Create secret</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

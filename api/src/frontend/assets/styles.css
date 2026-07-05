@@ -473,6 +473,81 @@ button:disabled {
   width: auto;
 }
 
+.secret-item {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+}
+
+.secret-actions {
+  border-top: 1px solid var(--panel-border);
+  min-width: 0;
+  padding: 1rem;
+}
+
+.secret-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 1rem;
+}
+
+.secret-summary::-webkit-details-marker {
+  display: none;
+}
+
+.secret-summary::after {
+  align-items: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  color: var(--accent);
+  content: '+';
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 800;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.secret-item[open] .secret-summary::after {
+  content: '-';
+}
+
+.secret-summary:focus-visible {
+  outline: 3px solid rgb(103 232 249 / 22%);
+  outline-offset: -3px;
+}
+
+.secret-value-form {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.secret-value-form textarea {
+  min-height: 4.5rem;
+}
+
+.secret-button-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.secret-button-row button {
+  margin-top: 0;
+}
+
+.secret-delete-button {
+  align-self: end;
+}
+
 .token-reveal {
   border: 1px solid rgb(134 239 172 / 45%);
   border-radius: 1rem;
@@ -553,5 +628,14 @@ button:disabled {
   .workspace {
     border-radius: 1.1rem;
     padding: 1rem;
+  }
+
+  .secret-button-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .secret-button-row button {
+    width: 100%;
   }
 }

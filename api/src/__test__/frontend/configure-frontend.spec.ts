@@ -61,10 +61,16 @@ describe('configureFrontend', () => {
       .get(`/projects/${projectId}/pats`)
       .expect(200)
       .expect('Content-Type', /html/);
+    const environmentResponse = await request(server)
+      .get(`/projects/${projectId}/environments/7ea93715-1cc6-428d-937f-e7d8eec105dc`)
+      .expect(200)
+      .expect('Content-Type', /html/);
 
     expect(environmentsResponse.text).toContain('Create Environment');
     expect(rolesResponse.text).toContain('Add Member');
     expect(patsResponse.text).toContain('Create Token');
+    expect(environmentResponse.text).toContain('Secret Keys');
+    expect(environmentResponse.text).toContain('Create Secret');
   });
 
   it('does not serve frontend pages through the API prefix', async () => {

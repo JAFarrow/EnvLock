@@ -128,18 +128,36 @@ function renderEnvironments() {
     item.className = 'resource-item';
 
     const content = document.createElement('div');
+    const environmentLink = document.createElement('a');
+    environmentLink.href = `/projects/${projectId}/environments/${environment.id}`;
+    environmentLink.textContent = environment.name;
+
+    const title = document.createElement('h3');
+    title.append(environmentLink);
+
     content.append(
-      createElement('h3', '', environment.name),
+      title,
       createElement('p', 'resource-meta', environment.slug),
       createElement('p', '', environment.description || 'No description provided.')
     );
     item.append(content);
 
+    const actions = document.createElement('div');
+    actions.className = 'inline-actions';
+
+    const manageLink = document.createElement('a');
+    manageLink.className = 'button-link';
+    manageLink.href = `/projects/${projectId}/environments/${environment.id}`;
+    manageLink.textContent = 'Manage secrets';
+    actions.append(manageLink);
+
     if (canManage) {
       const button = createButton('Delete', 'button-danger button-small');
       button.addEventListener('click', () => void handleDeleteEnvironment(environment));
-      item.append(button);
+      actions.append(button);
     }
+
+    item.append(actions);
 
     environmentList.append(item);
   }
