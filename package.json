@@ -9,15 +9,17 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "build:api": "npm run build -w @envlock/api",
+    "build:api": "npm run build -w api",
     "build:cli": "npm run build -w packages/cli",
-    "dev:api": "npm run start:dev -w @envlock/api",
+    "dev:api": "npm run start:dev -w api",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "start:api": "npm run start -w @envlock/api",
-    "test": "npm test -w @envlock/api"
+    "start:api": "npm run start -w api",
+    "test": "npm run test:api && npm run test:cli",
+    "test:api": "npm test -w api",
+    "test:cli": "npm test -w packages/cli"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

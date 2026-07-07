@@ -411,6 +411,35 @@ describe('SecretsService', () => {
     });
   });
 
+  it('returns secret keys for CLI doctor requests without decrypting values', async () => {
+    await expect(
+      secretsService.findCliKeys({ id: 'pat-id', projectId, userId }, 'production')
+    ).resolves.toEqual({
+      projectId,
+      environmentId,
+      environment: 'production',
+      keys: ['DATABASE_URL']
+    });
+
+    expect(environmentRepository.findActiveByProjectAndSlug).toHaveBeenCalledWith(
+      projectId,
+      'production'
+    );
+    expect(secretRepository.listActiveMetadataByEnvironmentId).toHaveBeenCalledWith(environmentId);
+    expect(secretRepository.listActiveByEnvironmentId).not.toHaveBeenCalled();
+    expect(secretEncryptionService.decrypt).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 for missing CLI doctor environments', async () => {
+    environmentRepository.findActiveByProjectAndSlug.mockResolvedValueOnce(null);
+
+    await expect(
+      secretsService.findCliKeys({ id: 'pat-id', projectId, userId }, 'missing')
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(secretRepository.listActiveMetadataByEnvironmentId).not.toHaveBeenCalled();
+  });
+
   it('returns an empty CLI variables object when no active secrets exist', async () => {
     secretRepository.listActiveByEnvironmentId.mockResolvedValueOnce([]);
 

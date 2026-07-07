@@ -84,6 +84,20 @@ envlock run --api-url http://localhost:3000 -e production -- npm start
 
 The CLI never prints secret values. Prefer `ENVLOCK_PAT` over `--pat` because command-line flags can be stored in shell history or visible in process lists.
 
+### Doctor Mode
+
+Doctor mode compares keys from a local `.env.example` file against the secret keys stored in EnvLock for an environment. It does not fetch or print secret values.
+
+```sh
+ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... envlock doctor -e development
+```
+
+Use `--example` when the example file is not at `.env.example`:
+
+```sh
+envlock doctor -e production --example config/.env.example
+```
+
 ### Build
 
 Build the API:

@@ -7,6 +7,7 @@ import { EnvironmentRepository } from '../environments/repositories/environment.
 import { type AuthenticatedPersonalAccessToken } from '../auth/contracts/personal-access-token-request';
 import { ProjectAccessService } from '../projects/project-access.service';
 import { getDefinedFieldNames } from '../utils/get-defined-field-names';
+import { type CliSecretKeysResponseDto } from './contracts/cli-secret-keys.response.dto';
 import { type CliSecretValuesResponseDto } from './contracts/cli-secret-values.response.dto';
 import { type CreateSecretDto } from './contracts/create-secret.dto';
 import { type UpdateSecretDto } from './contracts/update-secret.dto';
@@ -123,6 +124,29 @@ export class SecretsService {
       environmentId: environment.id,
       environment: environment.slug,
       variables
+    };
+  }
+
+  async findCliKeys(
+    personalAccessToken: AuthenticatedPersonalAccessToken,
+    environmentSlug: string
+  ): Promise<CliSecretKeysResponseDto> {
+    const environment = await this.environmentRepository.findActiveByProjectAndSlug(
+      personalAccessToken.projectId,
+      environmentSlug
+    );
+
+    if (environment === null) {
+      throw new NotFoundException('Environment not found');
+    }
+
+    const secrets = await this.secretRepository.listActiveMetadataByEnvironmentId(environment.id);
+
+    return {
+      projectId: personalAccessToken.projectId,
+      environmentId: environment.id,
+      environment: environment.slug,
+      keys: secrets.map((secret) => secret.key)
     };
   }
 

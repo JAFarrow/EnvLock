@@ -6,11 +6,13 @@ import { type AuthenticatedPersonalAccessTokenRequest } from '../../auth/contrac
 import { PersonalAccessTokenAuthGuard } from '../../auth/guards/personal-access-token-auth.guard';
 import { applyApiPrefix } from '../../main';
 import { CliSecretsController } from '../../secrets/cli-secrets.controller';
+import { type CliSecretKeysResponseDto } from '../../secrets/contracts/cli-secret-keys.response.dto';
 import { type CliSecretValuesResponseDto } from '../../secrets/contracts/cli-secret-values.response.dto';
 import { SecretsService } from '../../secrets/secrets.service';
 
 type SecretsServiceMock = {
   findCliValues: jest.Mock<Promise<CliSecretValuesResponseDto>, [unknown, string]>;
+  findCliKeys: jest.Mock<Promise<CliSecretKeysResponseDto>, [unknown, string]>;
 };
 
 const projectId = 'd251ec7d-8e99-499c-a9c2-8dcbb847492d';
@@ -25,6 +27,12 @@ const cliSecretValuesResponse: CliSecretValuesResponseDto = {
   variables: {
     DATABASE_URL: 'postgresql://example'
   }
+};
+const cliSecretKeysResponse: CliSecretKeysResponseDto = {
+  projectId,
+  environmentId,
+  environment: 'production',
+  keys: ['DATABASE_URL']
 };
 
 function createRequest(): AuthenticatedPersonalAccessTokenRequest {
@@ -42,6 +50,9 @@ describe('CliSecretsController', () => {
     service = {
       findCliValues: jest.fn<Promise<CliSecretValuesResponseDto>, [unknown, string]>(() =>
         Promise.resolve(cliSecretValuesResponse)
+      ),
+      findCliKeys: jest.fn<Promise<CliSecretKeysResponseDto>, [unknown, string]>(() =>
+        Promise.resolve(cliSecretKeysResponse)
       )
     };
 
@@ -78,6 +89,14 @@ describe('CliSecretsController', () => {
     expect(service.findCliValues).toHaveBeenCalledWith(personalAccessToken, 'production');
   });
 
+  it('returns CLI secret keys for the authenticated PAT', async () => {
+    await expect(controller.findKeys(createRequest(), 'production')).resolves.toBe(
+      cliSecretKeysResponse
+    );
+
+    expect(service.findCliKeys).toHaveBeenCalledWith(personalAccessToken, 'production');
+  });
+
   it('returns decrypted values over HTTP without allowing caches to store them', async () => {
     await initHttpApp();
 
@@ -92,6 +111,21 @@ describe('CliSecretsController', () => {
     expect(response.body).toEqual(cliSecretValuesResponse);
   });
 
+  it('returns secret keys over HTTP without allowing caches to store them', async () => {
+    await initHttpApp();
+
+    const server = app?.getHttpServer() as Parameters<typeof request>[0];
+    const response = await request(server)
+      .get('/api/cli/secrets/keys')
+      .query({ environmentSlug: 'production' })
+      .set('Authorization', `Bearer envlock_pat_${tokenId}.secret`)
+      .expect(200);
+
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.body).toEqual(cliSecretKeysResponse);
+    expect(response.body).not.toHaveProperty('variables');
+  });
+
   it('returns 400 for invalid query params', async () => {
     await initHttpApp();
 
@@ -104,6 +138,11 @@ describe('CliSecretsController', () => {
       .expect(400);
     await request(server)
       .get('/api/cli/secrets')
+      .query({ environmentSlug: 'Invalid_Slug' })
+      .set('Authorization', `Bearer envlock_pat_${tokenId}.secret`)
+      .expect(400);
+    await request(server)
+      .get('/api/cli/secrets/keys')
       .query({ environmentSlug: 'Invalid_Slug' })
       .set('Authorization', `Bearer envlock_pat_${tokenId}.secret`)
       .expect(400);

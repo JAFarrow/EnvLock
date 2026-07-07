@@ -4,6 +4,7 @@ import { type AuthenticatedPersonalAccessTokenRequest } from '../auth/contracts/
 import { PersonalAccessTokenAuthGuard } from '../auth/guards/personal-access-token-auth.guard';
 import { environmentSlugSchema } from '../environments/contracts/create-environment.dto';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe';
+import { type CliSecretKeysResponseDto } from './contracts/cli-secret-keys.response.dto';
 import { type CliSecretValuesResponseDto } from './contracts/cli-secret-values.response.dto';
 import { SecretsService } from './secrets.service';
 
@@ -11,6 +12,19 @@ import { SecretsService } from './secrets.service';
 @UseGuards(PersonalAccessTokenAuthGuard)
 export class CliSecretsController {
   constructor(private readonly secretsService: SecretsService) {}
+
+  @Get('keys')
+  @Header('Cache-Control', 'no-store')
+  findKeys(
+    @Req() request: AuthenticatedPersonalAccessTokenRequest,
+    @Query(
+      'environmentSlug',
+      new ZodValidationPipe(environmentSlugSchema, 'Invalid environment slug')
+    )
+    environmentSlug: string
+  ): Promise<CliSecretKeysResponseDto> {
+    return this.secretsService.findCliKeys(request.user, environmentSlug);
+  }
 
   @Get()
   @Header('Cache-Control', 'no-store')
