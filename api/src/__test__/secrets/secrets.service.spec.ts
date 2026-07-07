@@ -4,6 +4,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 
+import { AuditEventsService } from '../../audit-events/audit-events.service';
 import { EnvironmentEntity } from '../../environments/entities/environment.entity';
 import { EnvironmentRepository } from '../../environments/repositories/environment.repository';
 import { ProjectMembershipEntity } from '../../projects/entities/project-membership.entity';
@@ -44,6 +45,10 @@ type SecretRepositoryMock = {
 type SecretEncryptionServiceMock = {
   encrypt: jest.Mock<EncryptedSecretPayload, [string, { secretId: string; environmentId: string }]>;
   decrypt: jest.Mock<string, [EncryptedSecretPayload, { secretId: string; environmentId: string }]>;
+};
+
+type AuditEventsServiceMock = {
+  record: jest.Mock<Promise<void>, [Record<string, unknown>]>;
 };
 
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
@@ -141,6 +146,7 @@ describe('SecretsService', () => {
   let environmentRepository: EnvironmentRepositoryMock;
   let secretRepository: SecretRepositoryMock;
   let secretEncryptionService: SecretEncryptionServiceMock;
+  let auditEventsService: AuditEventsServiceMock;
 
   beforeEach(() => {
     projectMembershipsRepository = {
@@ -182,6 +188,9 @@ describe('SecretsService', () => {
         [EncryptedSecretPayload, { secretId: string; environmentId: string }]
       >(() => plaintext)
     };
+    auditEventsService = {
+      record: jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve())
+    };
 
     secretsService = new SecretsService(
       secretRepository as unknown as SecretRepository,
@@ -189,7 +198,8 @@ describe('SecretsService', () => {
       new ProjectAccessService(
         projectMembershipsRepository as unknown as ProjectMembershipsRepository
       ),
-      environmentRepository as unknown as EnvironmentRepository
+      environmentRepository as unknown as EnvironmentRepository,
+      auditEventsService as unknown as AuditEventsService
     );
   });
 
@@ -216,6 +226,19 @@ describe('SecretsService', () => {
         encryptedValue: Buffer.from('new-ciphertext')
       })
     );
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      environmentId,
+      actorUserId: userId,
+      action: 'secret.created',
+      targetType: 'secret',
+      targetId: expect.any(String) as string,
+      details: {
+        environmentName: 'Production',
+        fields: ['key', 'value'],
+        secretKey: 'DATABASE_URL'
+      }
+    });
   });
 
   it('allows a maintainer to create a secret', async () => {
@@ -372,6 +395,20 @@ describe('SecretsService', () => {
       expect.objectContaining({ encryptedValue: Buffer.from('ciphertext') }),
       { secretId, environmentId }
     );
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      environmentId,
+      actorUserId: userId,
+      action: 'secret.values_read',
+      targetType: 'environment',
+      targetId: environmentId,
+      details: {
+        environmentName: 'Production',
+        environmentSlug: 'production',
+        patId: 'pat-id',
+        secretCount: 1
+      }
+    });
   });
 
   it('returns an empty CLI variables object when no active secrets exist', async () => {
@@ -419,6 +456,19 @@ describe('SecretsService', () => {
     expect(secretEncryptionService.encrypt).not.toHaveBeenCalled();
     expect(secret.key).toBe('PRIMARY_DATABASE_URL');
     expect(secretRepository.save).toHaveBeenCalledWith(secret);
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      environmentId,
+      actorUserId: userId,
+      action: 'secret.updated',
+      targetType: 'secret',
+      targetId: secretId,
+      details: {
+        environmentName: 'Production',
+        changedFields: ['key'],
+        secretKey: 'PRIMARY_DATABASE_URL'
+      }
+    });
   });
 
   it('allows a maintainer to update a secret', async () => {
@@ -460,6 +510,19 @@ describe('SecretsService', () => {
       environmentId
     });
     expect(secret.encryptedValue).toEqual(Buffer.from('new-ciphertext'));
+    expect(auditEventsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        environmentId,
+        details: {
+          environmentName: 'Production',
+          changedFields: ['value'],
+          secretKey: 'DATABASE_URL'
+        }
+      })
+    );
+    expect(JSON.stringify(auditEventsService.record.mock.calls)).not.toContain(
+      'postgresql://new-value'
+    );
   });
 
   it('encrypts empty-string replacement values rather than ignoring them', async () => {

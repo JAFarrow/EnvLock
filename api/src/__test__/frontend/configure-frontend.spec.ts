@@ -61,6 +61,10 @@ describe('configureFrontend', () => {
       .get(`/projects/${projectId}/pats`)
       .expect(200)
       .expect('Content-Type', /html/);
+    const auditResponse = await request(server)
+      .get(`/projects/${projectId}/audit`)
+      .expect(200)
+      .expect('Content-Type', /html/);
     const environmentResponse = await request(server)
       .get(`/projects/${projectId}/environments/7ea93715-1cc6-428d-937f-e7d8eec105dc`)
       .expect(200)
@@ -69,6 +73,7 @@ describe('configureFrontend', () => {
     expect(environmentsResponse.text).toContain('Create Environment');
     expect(rolesResponse.text).toContain('Add Member');
     expect(patsResponse.text).toContain('Create Token');
+    expect(auditResponse.text).toContain('Project Audit Events');
     expect(environmentResponse.text).toContain('Secret Keys');
     expect(environmentResponse.text).toContain('Create Secret');
   });

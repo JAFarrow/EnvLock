@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { AuditEventsModule } from '../audit-events/audit-events.module';
 import { AuthModule } from '../auth/auth.module';
 import { EnvironmentsModule } from '../environments/environments.module';
 import { ProjectsModule } from '../projects/projects.module';
@@ -15,6 +16,7 @@ import { SecretsService } from './secrets.service';
 
 @Module({
   imports: [
+    AuditEventsModule,
     AuthModule,
     EnvironmentsModule,
     ProjectsModule,

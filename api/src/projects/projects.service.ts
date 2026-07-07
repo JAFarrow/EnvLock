@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
+import { AuditEventsService } from '../audit-events/audit-events.service';
+import { getDefinedFieldNames } from '../utils/get-defined-field-names';
 import { type CreateProjectDto } from './contracts/create-project.dto';
 import { ProjectMembershipsRepository } from './repositories/project-memberships.repository';
 import { ProjectRole } from './entities/project-role.enum';
@@ -19,7 +21,8 @@ export class ProjectsService {
     private readonly dataSource: DataSource,
     private readonly projectsRepository: ProjectsRepository,
     private readonly projectMembershipsRepository: ProjectMembershipsRepository,
-    private readonly projectAccessService: ProjectAccessService
+    private readonly projectAccessService: ProjectAccessService,
+    private readonly auditEventsService?: AuditEventsService
   ) {}
 
   async createProject(userId: string, input: CreateProjectDto): Promise<ProjectResponseDto> {
@@ -40,6 +43,20 @@ export class ProjectsService {
           userId,
           role: ProjectRole.OWNER,
           addedByUserId: userId
+        },
+        manager
+      );
+
+      await this.auditEventsService?.record(
+        {
+          projectId: savedProject.id,
+          actorUserId: userId,
+          action: 'project.created',
+          targetType: 'project',
+          targetId: savedProject.id,
+          details: {
+            fields: getDefinedFieldNames(input)
+          }
         },
         manager
       );
@@ -96,6 +113,17 @@ export class ProjectsService {
 
     const savedProject = await this.projectsRepository.save(project);
 
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId: userId,
+      action: 'project.updated',
+      targetType: 'project',
+      targetId: projectId,
+      details: {
+        changedFields: getDefinedFieldNames(input)
+      }
+    });
+
     return toProjectResponse(savedProject, membership.role);
   }
 
@@ -108,5 +136,13 @@ export class ProjectsService {
 
     membership.project.archivedAt = new Date();
     await this.projectsRepository.save(membership.project);
+
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId: userId,
+      action: 'project.archived',
+      targetType: 'project',
+      targetId: projectId
+    });
   }
 }

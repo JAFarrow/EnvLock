@@ -16,13 +16,19 @@
             <h1 id="page-title">Personal Access Tokens</h1>
             <p id="page-status" class="lede">Loading project...</p>
           </div>
-          <p id="project-role" class="badge"></p>
+          <div class="workspace-actions">
+            <p id="project-role" class="badge"></p>
+            <button id="logout-button" class="button-secondary button-small" type="button">
+              Log out
+            </button>
+          </div>
         </header>
 
         <nav class="subpage-nav" aria-label="Project management pages">
           <a id="environments-link" href="#">Environments</a>
           <a id="roles-link" href="#">Roles</a>
           <a id="pats-link" href="#" aria-current="page">PATs</a>
+          <a id="audit-link" href="#">Audit</a>
         </nav>
 
         <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>

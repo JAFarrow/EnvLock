@@ -5,6 +5,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 
+import { AuditEventsService } from '../audit-events/audit-events.service';
 import {
   assignableProjectMemberRoles,
   type AddProjectMemberDto
@@ -26,7 +27,8 @@ export class ProjectMembershipsService {
   constructor(
     private readonly projectAccessService: ProjectAccessService,
     private readonly projectMembershipsRepository: ProjectMembershipsRepository,
-    private readonly usersRepository: UsersRepository
+    private readonly usersRepository: UsersRepository,
+    private readonly auditEventsService?: AuditEventsService
   ) {}
 
   async findAll(actorUserId: string, projectId: string): Promise<ProjectMemberListResponseDto> {
@@ -71,6 +73,18 @@ export class ProjectMembershipsService {
 
     membership.user = targetUser;
 
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId,
+      action: 'project_member.added',
+      targetType: 'project_member',
+      targetId: membership.id,
+      details: {
+        fields: ['role'],
+        targetUserId: targetUser.id
+      }
+    });
+
     return toProjectMemberResponse(membership);
   }
 
@@ -90,6 +104,18 @@ export class ProjectMembershipsService {
 
     const savedMembership = await this.projectMembershipsRepository.save(membership);
 
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId,
+      action: 'project_member.role_updated',
+      targetType: 'project_member',
+      targetId: savedMembership.id,
+      details: {
+        changedFields: ['role'],
+        targetUserId
+      }
+    });
+
     return toProjectMemberResponse(savedMembership);
   }
 
@@ -100,6 +126,17 @@ export class ProjectMembershipsService {
     this.assertNonOwnerMembership(membership, 'Owner memberships cannot be removed');
 
     await this.projectMembershipsRepository.remove(membership);
+
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId,
+      action: 'project_member.removed',
+      targetType: 'project_member',
+      targetId: membership.id,
+      details: {
+        targetUserId
+      }
+    });
   }
 
   private async assertActorOwnsActiveProject(

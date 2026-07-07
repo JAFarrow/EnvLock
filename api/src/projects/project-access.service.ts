@@ -35,4 +35,10 @@ export class ProjectAccessService {
       throw new ForbiddenException('Only project owners and maintainers can perform this action');
     }
   }
+
+  assertOneOfRoles(membership: ProjectMembershipEntity, roles: ProjectRole[]): void {
+    if (!roles.includes(membership.role)) {
+      throw new ForbiddenException('Insufficient project permissions');
+    }
+  }
 }

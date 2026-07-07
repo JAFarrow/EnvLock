@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { AuditEventsController } from '../audit-events/audit-events.controller';
+import { AuditEventsModule } from '../audit-events/audit-events.module';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { ProjectMembershipEntity } from './entities/project-membership.entity';
@@ -15,11 +17,12 @@ import { ProjectsService } from './projects.service';
 
 @Module({
   imports: [
+    AuditEventsModule,
     AuthModule,
     UsersModule,
     TypeOrmModule.forFeature([ProjectEntity, ProjectMembershipEntity])
   ],
-  controllers: [ProjectsController, ProjectMembershipsController],
+  controllers: [ProjectsController, ProjectMembershipsController, AuditEventsController],
   providers: [
     ProjectsService,
     ProjectMembershipsService,

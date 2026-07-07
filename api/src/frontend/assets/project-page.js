@@ -1,8 +1,15 @@
-import { requestJson } from './api.js';
+import { configureLogoutButton, requestJson } from './api.js';
 
 const status = document.querySelector('#page-status');
 const message = document.querySelector('#page-message');
 const projectRole = document.querySelector('#project-role');
+const auditLink = document.querySelector('#audit-link');
+
+if (auditLink instanceof HTMLElement) {
+  auditLink.hidden = true;
+}
+
+configureLogoutButton();
 
 export function getProjectIdFromPath() {
   const [, resource, projectId] = window.location.pathname.split('/');
@@ -19,6 +26,7 @@ export function configureProjectNavigation(projectId) {
   setLink('#environments-link', `/projects/${projectId}/environments`);
   setLink('#roles-link', `/projects/${projectId}/roles`);
   setLink('#pats-link', `/projects/${projectId}/pats`);
+  setLink('#audit-link', `/projects/${projectId}/audit`);
 }
 
 export async function apiRequest(path, options) {
@@ -36,6 +44,7 @@ export async function apiRequest(path, options) {
 export function renderProjectChrome(project, sectionName) {
   setStatus(`${project.name} · ${sectionName}`);
   setText(projectRole, formatRole(project.role));
+  setVisible(auditLink, project.role !== 'developer');
 }
 
 export function showMessage(text, kind) {
@@ -140,6 +149,13 @@ export function formatRole(role) {
 
 export function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
+}
+
+export function formatDateTime(value) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(new Date(value));
 }
 
 export function formatDateTimeLocal(value) {

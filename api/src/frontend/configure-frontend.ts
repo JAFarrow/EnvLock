@@ -18,7 +18,7 @@ export function configureFrontend(app: NestExpressApplication): void {
     }
 
     const projectSubpageMatch = request.path.match(
-      /^\/projects\/[^/]+\/(environments|roles|pats)$/
+      /^\/projects\/[^/]+\/(environments|roles|pats|audit)$/
     );
 
     const projectSubpage = projectSubpageMatch?.[1];

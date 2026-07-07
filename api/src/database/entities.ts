@@ -1,3 +1,4 @@
+import { AuditEventEntity } from '../audit-events/entities/audit-event.entity';
 import { EnvironmentEntity } from '../environments/entities/environment.entity';
 import { PersonalAccessTokenEntity } from '../personal-access-tokens/entities/personal-access-token.entity';
 import { ProjectMembershipEntity } from '../projects/entities/project-membership.entity';
@@ -6,6 +7,7 @@ import { SecretEntity } from '../secrets/entities/secret.entity';
 import { UserEntity } from '../users/entities/user.entity';
 
 export const databaseEntities = [
+  AuditEventEntity,
   UserEntity,
   ProjectEntity,
   ProjectMembershipEntity,

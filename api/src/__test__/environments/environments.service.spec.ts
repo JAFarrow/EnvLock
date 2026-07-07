@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
+import { AuditEventsService } from '../../audit-events/audit-events.service';
 import { EnvironmentEntity } from '../../environments/entities/environment.entity';
 import { EnvironmentRepository } from '../../environments/repositories/environment.repository';
 import { ProjectMembershipEntity } from '../../projects/entities/project-membership.entity';
@@ -33,6 +34,10 @@ type ProjectMembershipsRepositoryMock = {
     Promise<ProjectMembershipEntity | null>,
     [string, string]
   >;
+};
+
+type AuditEventsServiceMock = {
+  record: jest.Mock<Promise<void>, [Record<string, unknown>]>;
 };
 
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
@@ -93,6 +98,7 @@ describe('EnvironmentsService', () => {
   let environmentsService: EnvironmentsService;
   let environmentRepository: EnvironmentRepositoryMock;
   let projectMembershipsRepository: ProjectMembershipsRepositoryMock;
+  let auditEventsService: AuditEventsServiceMock;
 
   beforeEach(() => {
     environmentRepository = {
@@ -127,12 +133,16 @@ describe('EnvironmentsService', () => {
         [string, string]
       >(() => Promise.resolve(createMembership()))
     };
+    auditEventsService = {
+      record: jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve())
+    };
 
     environmentsService = new EnvironmentsService(
       environmentRepository as unknown as EnvironmentRepository,
       new ProjectAccessService(
         projectMembershipsRepository as unknown as ProjectMembershipsRepository
-      )
+      ),
+      auditEventsService as unknown as AuditEventsService
     );
   });
 
@@ -159,6 +169,18 @@ describe('EnvironmentsService', () => {
       slug: 'production',
       description: 'Production deployment environment',
       createdByUserId: userId
+    });
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      environmentId,
+      actorUserId: userId,
+      action: 'environment.created',
+      targetType: 'environment',
+      targetId: environmentId,
+      details: {
+        environmentName: 'Production',
+        fields: ['name', 'slug', 'description']
+      }
     });
   });
 

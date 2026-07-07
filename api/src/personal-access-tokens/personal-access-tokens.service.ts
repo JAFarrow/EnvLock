@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
 
+import { AuditEventsService } from '../audit-events/audit-events.service';
 import { ProjectRole } from '../projects/entities/project-role.enum';
 import { ProjectAccessService } from '../projects/project-access.service';
 import { type CreatePersonalAccessTokenDto } from './contracts/create-personal-access-token.dto';
@@ -28,7 +29,8 @@ const millisecondsPerDay = 24 * 60 * 60 * 1000;
 export class PersonalAccessTokensService {
   constructor(
     private readonly projectAccessService: ProjectAccessService,
-    private readonly personalAccessTokenRepository: PersonalAccessTokenRepository
+    private readonly personalAccessTokenRepository: PersonalAccessTokenRepository,
+    private readonly auditEventsService?: AuditEventsService
   ) {}
 
   async list(userId: string, projectId: string): Promise<PersonalAccessTokenListResponseDto> {
@@ -68,6 +70,17 @@ export class PersonalAccessTokensService {
       expiresAt
     });
 
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId: userId,
+      action: 'pat.created',
+      targetType: 'personal_access_token',
+      targetId: token.id,
+      details: {
+        fields: ['name', 'expiresAt']
+      }
+    });
+
     return toPersonalAccessTokenResponse(token, rawToken);
   }
 
@@ -95,6 +108,14 @@ export class PersonalAccessTokensService {
     token.revokedAt = new Date();
 
     await this.personalAccessTokenRepository.save(token);
+
+    await this.auditEventsService?.record({
+      projectId,
+      actorUserId,
+      action: 'pat.revoked',
+      targetType: 'personal_access_token',
+      targetId: token.id
+    });
   }
 
   private parseAndValidateExpiration(expiresAtInput: string): Date {

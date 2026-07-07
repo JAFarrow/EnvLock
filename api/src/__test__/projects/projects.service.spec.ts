@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 
+import { AuditEventsService } from '../../audit-events/audit-events.service';
 import { ProjectMembershipEntity } from '../../projects/entities/project-membership.entity';
 import {
   type CreateProjectMembershipRecord,
@@ -36,6 +37,10 @@ type ProjectMembershipsRepositoryMock = {
     Promise<ProjectMembershipEntity | null>,
     [string, string]
   >;
+};
+
+type AuditEventsServiceMock = {
+  record: jest.Mock<Promise<void>, [Record<string, unknown>, EntityManager?]>;
 };
 
 const userId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
@@ -80,6 +85,7 @@ describe('ProjectsService', () => {
   let dataSource: DataSourceMock;
   let projectsRepository: ProjectsRepositoryMock;
   let projectMembershipsRepository: ProjectMembershipsRepositoryMock;
+  let auditEventsService: AuditEventsServiceMock;
   let transactionManager: EntityManager;
 
   beforeEach(() => {
@@ -108,6 +114,11 @@ describe('ProjectsService', () => {
         [string, string]
       >(() => Promise.resolve(null))
     };
+    auditEventsService = {
+      record: jest.fn<Promise<void>, [Record<string, unknown>, EntityManager?]>(() =>
+        Promise.resolve()
+      )
+    };
 
     projectsService = new ProjectsService(
       dataSource as unknown as DataSource,
@@ -115,7 +126,8 @@ describe('ProjectsService', () => {
       projectMembershipsRepository as unknown as ProjectMembershipsRepository,
       new ProjectAccessService(
         projectMembershipsRepository as unknown as ProjectMembershipsRepository
-      )
+      ),
+      auditEventsService as unknown as AuditEventsService
     );
   });
 
@@ -152,6 +164,19 @@ describe('ProjectsService', () => {
         userId,
         role: ProjectRole.OWNER,
         addedByUserId: userId
+      },
+      transactionManager
+    );
+    expect(auditEventsService.record).toHaveBeenCalledWith(
+      {
+        projectId,
+        actorUserId: userId,
+        action: 'project.created',
+        targetType: 'project',
+        targetId: projectId,
+        details: {
+          fields: ['name', 'description', 'repositoryUrl']
+        }
       },
       transactionManager
     );
@@ -244,6 +269,16 @@ describe('ProjectsService', () => {
         repositoryUrl: null
       })
     );
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      actorUserId: userId,
+      action: 'project.updated',
+      targetType: 'project',
+      targetId: projectId,
+      details: {
+        changedFields: ['name', 'description', 'repositoryUrl']
+      }
+    });
   });
 
   it('returns 403 when a non-owner member updates a project', async () => {

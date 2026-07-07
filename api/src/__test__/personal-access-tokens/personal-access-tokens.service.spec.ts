@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 
+import { AuditEventsService } from '../../audit-events/audit-events.service';
 import { PersonalAccessTokenEntity } from '../../personal-access-tokens/entities/personal-access-token.entity';
 import {
   type CreatePersonalAccessTokenRecord,
@@ -33,6 +34,10 @@ type PersonalAccessTokenRepositoryMock = {
     [string, string]
   >;
   save: jest.Mock<Promise<PersonalAccessTokenEntity>, [PersonalAccessTokenEntity]>;
+};
+
+type AuditEventsServiceMock = {
+  record: jest.Mock<Promise<void>, [Record<string, unknown>]>;
 };
 
 const now = new Date('2026-07-04T12:00:00.000Z');
@@ -108,6 +113,7 @@ describe('PersonalAccessTokensService', () => {
   let service: PersonalAccessTokensService;
   let projectMembershipsRepository: ProjectMembershipsRepositoryMock;
   let personalAccessTokenRepository: PersonalAccessTokenRepositoryMock;
+  let auditEventsService: AuditEventsServiceMock;
 
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(now);
@@ -137,12 +143,16 @@ describe('PersonalAccessTokensService', () => {
         Promise.resolve(token)
       )
     };
+    auditEventsService = {
+      record: jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve())
+    };
 
     service = new PersonalAccessTokensService(
       new ProjectAccessService(
         projectMembershipsRepository as unknown as ProjectMembershipsRepository
       ),
-      personalAccessTokenRepository as unknown as PersonalAccessTokenRepository
+      personalAccessTokenRepository as unknown as PersonalAccessTokenRepository,
+      auditEventsService as unknown as AuditEventsService
     );
   });
 
@@ -170,6 +180,16 @@ describe('PersonalAccessTokensService', () => {
       projectId,
       userId
     );
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      actorUserId: userId,
+      action: 'pat.created',
+      targetType: 'personal_access_token',
+      targetId: expect.any(String) as string,
+      details: {
+        fields: ['name', 'expiresAt']
+      }
+    });
   });
 
   it.each([ProjectRole.OWNER, ProjectRole.MAINTAINER])(
@@ -305,6 +325,10 @@ describe('PersonalAccessTokensService', () => {
     );
     expect(createdRecord?.tokenHash).not.toBe(tokenSecret);
     expect(JSON.stringify(createdRecord)).not.toContain(response.token);
+    expect(JSON.stringify(auditEventsService.record.mock.calls)).not.toContain(response.token);
+    expect(JSON.stringify(auditEventsService.record.mock.calls)).not.toContain(
+      createdRecord?.tokenHash ?? ''
+    );
   });
 
   it('rejects expirations in the past', async () => {
@@ -348,6 +372,13 @@ describe('PersonalAccessTokensService', () => {
       tokenId
     );
     expect(savedToken?.revokedAt).toBeInstanceOf(Date);
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      actorUserId: userId,
+      action: 'pat.revoked',
+      targetType: 'personal_access_token',
+      targetId: tokenId
+    });
   });
 
   it.each([ProjectRole.OWNER, ProjectRole.MAINTAINER])(

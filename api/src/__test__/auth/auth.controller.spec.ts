@@ -101,4 +101,22 @@ describe('AuthController', () => {
     expect(configGet).toHaveBeenCalledWith('NODE_ENV', { infer: true });
     expect(configGet).toHaveBeenCalledWith('JWT_ACCESS_TOKEN_COOKIE_NAME', { infer: true });
   });
+
+  it('clears the access token cookie on logout', () => {
+    const clearCookie = jest.fn();
+    const response = {
+      clearCookie
+    } as unknown as Response;
+
+    expect(authController.logout(response)).toEqual({ success: true });
+
+    expect(clearCookie).toHaveBeenCalledWith(accessTokenCookieName, {
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: false
+    });
+    expect(configGet).toHaveBeenCalledWith('NODE_ENV', { infer: true });
+    expect(configGet).toHaveBeenCalledWith('JWT_ACCESS_TOKEN_COOKIE_NAME', { infer: true });
+  });
 });

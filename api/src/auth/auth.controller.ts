@@ -42,4 +42,19 @@ export class AuthController {
 
     return result;
   }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) response: Response): { success: true } {
+    const nodeEnv = this.configService.get('NODE_ENV', { infer: true });
+    const cookieName = this.configService.get('JWT_ACCESS_TOKEN_COOKIE_NAME', { infer: true });
+
+    response.clearCookie(cookieName, {
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: nodeEnv === 'production'
+    });
+
+    return { success: true };
+  }
 }

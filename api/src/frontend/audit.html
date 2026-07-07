@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audit | EnvLock</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/audit.js"></script>
+  </head>
+  <body>
+    <main class="page-shell projects-shell">
+      <section class="workspace" aria-labelledby="page-title">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow"><a href="/projects">Projects</a></p>
+            <h1 id="page-title">Audit</h1>
+            <p id="page-status" class="lede">Loading project...</p>
+          </div>
+          <div class="workspace-actions">
+            <p id="project-role" class="badge"></p>
+            <button id="logout-button" class="button-secondary button-small" type="button">
+              Log out
+            </button>
+          </div>
+        </header>
+
+        <nav class="subpage-nav" aria-label="Project management pages">
+          <a id="environments-link" href="#">Environments</a>
+          <a id="roles-link" href="#">Roles</a>
+          <a id="pats-link" href="#">PATs</a>
+          <a id="audit-link" href="#" aria-current="page">Audit</a>
+        </nav>
+
+        <div id="page-message" class="message" role="status" aria-live="polite" hidden></div>
+
+        <section class="management-card wide-card" aria-labelledby="audit-title">
+          <div class="section-header">
+            <div>
+              <h2 id="audit-title">Project Audit Events</h2>
+              <p>Newest 50 sensitive project events.</p>
+            </div>
+          </div>
+
+          <div id="audit-list" class="item-list" aria-live="polite"></div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

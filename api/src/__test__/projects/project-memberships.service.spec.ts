@@ -5,6 +5,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 
+import { AuditEventsService } from '../../audit-events/audit-events.service';
 import { addProjectMemberSchema } from '../../projects/contracts/add-project-member.dto';
 import { type UpdateProjectMemberRoleDto } from '../../projects/contracts/update-project-member-role.dto';
 import { ProjectMembershipEntity } from '../../projects/entities/project-membership.entity';
@@ -40,6 +41,10 @@ type ProjectMembershipsRepositoryMock = {
 
 type UsersRepositoryMock = {
   findByEmail: jest.Mock<Promise<UserEntity | null>, [string]>;
+};
+
+type AuditEventsServiceMock = {
+  record: jest.Mock<Promise<void>, [Record<string, unknown>]>;
 };
 
 const ownerUserId = '9942365e-cb78-4f24-9f33-5b4a821759a4';
@@ -101,6 +106,7 @@ describe('ProjectMembershipsService', () => {
   let projectMembershipsService: ProjectMembershipsService;
   let projectMembershipsRepository: ProjectMembershipsRepositoryMock;
   let usersRepository: UsersRepositoryMock;
+  let auditEventsService: AuditEventsServiceMock;
 
   beforeEach(() => {
     projectMembershipsRepository = {
@@ -144,13 +150,17 @@ describe('ProjectMembershipsService', () => {
         Promise.resolve(createUser())
       )
     };
+    auditEventsService = {
+      record: jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve())
+    };
 
     projectMembershipsService = new ProjectMembershipsService(
       new ProjectAccessService(
         projectMembershipsRepository as unknown as ProjectMembershipsRepository
       ),
       projectMembershipsRepository as unknown as ProjectMembershipsRepository,
-      usersRepository as unknown as UsersRepository
+      usersRepository as unknown as UsersRepository,
+      auditEventsService as unknown as AuditEventsService
     );
   });
 
@@ -220,6 +230,17 @@ describe('ProjectMembershipsService', () => {
         userId: developerUserId,
         role,
         addedByUserId: ownerUserId
+      });
+      expect(auditEventsService.record).toHaveBeenCalledWith({
+        projectId,
+        actorUserId: ownerUserId,
+        action: 'project_member.added',
+        targetType: 'project_member',
+        targetId: expect.any(String) as string,
+        details: {
+          fields: ['role'],
+          targetUserId: developerUserId
+        }
       });
     }
   );
@@ -301,6 +322,17 @@ describe('ProjectMembershipsService', () => {
 
     expect(membership.role).toBe(toRole);
     expect(projectMembershipsRepository.save).toHaveBeenCalledWith(membership);
+    expect(auditEventsService.record).toHaveBeenCalledWith({
+      projectId,
+      actorUserId: ownerUserId,
+      action: 'project_member.role_updated',
+      targetType: 'project_member',
+      targetId: membership.id,
+      details: {
+        changedFields: ['role'],
+        targetUserId: developerUserId
+      }
+    });
   });
 
   it('returns 400 when assigning the owner role', async () => {

@@ -28,6 +28,25 @@ export async function requestJson(path, options = {}) {
   return body;
 }
 
+export function configureLogoutButton() {
+  const logoutButton = document.querySelector('#logout-button');
+
+  if (!(logoutButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  logoutButton.addEventListener('click', async () => {
+    logoutButton.disabled = true;
+    logoutButton.textContent = 'Logging out...';
+
+    try {
+      await requestJson('/api/auth/logout', { method: 'POST' });
+    } finally {
+      window.location.assign('/login');
+    }
+  });
+}
+
 async function readJson(response) {
   const text = await response.text();
 

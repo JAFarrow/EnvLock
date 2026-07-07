@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { AuditEventsService } from '../audit-events/audit-events.service';
 import { ProjectAccessService } from '../projects/project-access.service';
+import { getDefinedFieldNames } from '../utils/get-defined-field-names';
 import { type CreateEnvironmentDto } from './contracts/create-environment.dto';
 import {
   type EnvironmentListResponseDto,
@@ -14,7 +16,8 @@ import { EnvironmentRepository } from './repositories/environment.repository';
 export class EnvironmentsService {
   constructor(
     private readonly environmentRepository: EnvironmentRepository,
-    private readonly projectAccessService: ProjectAccessService
+    private readonly projectAccessService: ProjectAccessService,
+    private readonly auditEventsService?: AuditEventsService
   ) {}
 
   async createEnvironment(
@@ -35,6 +38,19 @@ export class EnvironmentsService {
       slug: input.slug,
       description: input.description ?? null,
       createdByUserId: userId
+    });
+
+    await this.auditEventsService?.record({
+      projectId,
+      environmentId: environment.id,
+      actorUserId: userId,
+      action: 'environment.created',
+      targetType: 'environment',
+      targetId: environment.id,
+      details: {
+        environmentName: environment.name,
+        fields: getDefinedFieldNames(input)
+      }
     });
 
     return toEnvironmentResponse(environment);
@@ -105,6 +121,19 @@ export class EnvironmentsService {
 
     const savedEnvironment = await this.environmentRepository.save(environment);
 
+    await this.auditEventsService?.record({
+      projectId,
+      environmentId,
+      actorUserId: userId,
+      action: 'environment.updated',
+      targetType: 'environment',
+      targetId: environmentId,
+      details: {
+        environmentName: savedEnvironment.name,
+        changedFields: getDefinedFieldNames(input)
+      }
+    });
+
     return toEnvironmentResponse(savedEnvironment);
   }
 
@@ -130,6 +159,18 @@ export class EnvironmentsService {
 
     environment.archivedAt = new Date();
     await this.environmentRepository.save(environment);
+
+    await this.auditEventsService?.record({
+      projectId,
+      environmentId,
+      actorUserId: userId,
+      action: 'environment.archived',
+      targetType: 'environment',
+      targetId: environmentId,
+      details: {
+        environmentName: environment.name
+      }
+    });
   }
 
   private async assertSlugAvailable(projectId: string, slug: string): Promise<void> {

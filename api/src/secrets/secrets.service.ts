@@ -1,9 +1,12 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 
+import { AuditEventsService } from '../audit-events/audit-events.service';
+import { type EnvironmentEntity } from '../environments/entities/environment.entity';
 import { EnvironmentRepository } from '../environments/repositories/environment.repository';
 import { type AuthenticatedPersonalAccessToken } from '../auth/contracts/personal-access-token-request';
 import { ProjectAccessService } from '../projects/project-access.service';
+import { getDefinedFieldNames } from '../utils/get-defined-field-names';
 import { type CliSecretValuesResponseDto } from './contracts/cli-secret-values.response.dto';
 import { type CreateSecretDto } from './contracts/create-secret.dto';
 import { type UpdateSecretDto } from './contracts/update-secret.dto';
@@ -19,7 +22,8 @@ export class SecretsService {
     private readonly secretRepository: SecretRepository,
     private readonly secretEncryptionService: SecretEncryptionService,
     private readonly projectAccessService: ProjectAccessService,
-    private readonly environmentRepository: EnvironmentRepository
+    private readonly environmentRepository: EnvironmentRepository,
+    private readonly auditEventsService?: AuditEventsService
   ) {}
 
   async create(
@@ -33,7 +37,7 @@ export class SecretsService {
       projectId
     );
     this.projectAccessService.assertEnvironmentManager(membership);
-    await this.assertActiveEnvironmentInProject(projectId, environmentId);
+    const environment = await this.assertActiveEnvironmentInProject(projectId, environmentId);
 
     const secretId = randomUUID();
     const encryptedPayload = this.encryptSecret(input.value, secretId, environmentId);
@@ -45,6 +49,20 @@ export class SecretsService {
       ...encryptedPayload,
       createdByUserId: actorUserId,
       updatedByUserId: actorUserId
+    });
+
+    await this.auditEventsService?.record({
+      projectId,
+      environmentId,
+      actorUserId,
+      action: 'secret.created',
+      targetType: 'secret',
+      targetId: secret.id,
+      details: {
+        environmentName: environment.name,
+        fields: ['key', 'value'],
+        secretKey: secret.key
+      }
     });
 
     return toSecretResponse(secret);
@@ -85,6 +103,21 @@ export class SecretsService {
       variables[secret.key] = this.decryptSecret(secret);
     }
 
+    await this.auditEventsService?.record({
+      projectId: personalAccessToken.projectId,
+      environmentId: environment.id,
+      actorUserId: personalAccessToken.userId,
+      action: 'secret.values_read',
+      targetType: 'environment',
+      targetId: environment.id,
+      details: {
+        environmentName: environment.name,
+        environmentSlug,
+        patId: personalAccessToken.id,
+        secretCount: secrets.length
+      }
+    });
+
     return {
       projectId: personalAccessToken.projectId,
       environmentId: environment.id,
@@ -105,7 +138,7 @@ export class SecretsService {
       projectId
     );
     this.projectAccessService.assertEnvironmentManager(membership);
-    await this.assertActiveEnvironmentInProject(projectId, environmentId);
+    const environment = await this.assertActiveEnvironmentInProject(projectId, environmentId);
 
     const secret = await this.findActiveSecret(environmentId, secretId);
 
@@ -127,6 +160,20 @@ export class SecretsService {
 
     const savedSecret = await this.secretRepository.save(secret);
 
+    await this.auditEventsService?.record({
+      projectId,
+      environmentId,
+      actorUserId,
+      action: 'secret.updated',
+      targetType: 'secret',
+      targetId: savedSecret.id,
+      details: {
+        environmentName: environment.name,
+        changedFields: getDefinedFieldNames(input),
+        secretKey: savedSecret.key
+      }
+    });
+
     return toSecretResponse(savedSecret);
   }
 
@@ -141,19 +188,32 @@ export class SecretsService {
       projectId
     );
     this.projectAccessService.assertEnvironmentManager(membership);
-    await this.assertActiveEnvironmentInProject(projectId, environmentId);
+    const environment = await this.assertActiveEnvironmentInProject(projectId, environmentId);
 
     const secret = await this.findActiveSecret(environmentId, secretId);
     secret.archivedAt = new Date();
     secret.updatedByUserId = actorUserId;
 
     await this.secretRepository.save(secret);
+
+    await this.auditEventsService?.record({
+      projectId,
+      environmentId,
+      actorUserId,
+      action: 'secret.archived',
+      targetType: 'secret',
+      targetId: secret.id,
+      details: {
+        environmentName: environment.name,
+        secretKey: secret.key
+      }
+    });
   }
 
   private async assertActiveEnvironmentInProject(
     projectId: string,
     environmentId: string
-  ): Promise<void> {
+  ): Promise<EnvironmentEntity> {
     const environment = await this.environmentRepository.findActiveByProjectAndId(
       projectId,
       environmentId
@@ -162,6 +222,8 @@ export class SecretsService {
     if (environment === null) {
       throw new NotFoundException('Environment not found');
     }
+
+    return environment;
   }
 
   private async findActiveSecret(environmentId: string, secretId: string): Promise<SecretEntity> {

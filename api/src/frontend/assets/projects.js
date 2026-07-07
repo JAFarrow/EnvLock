@@ -1,4 +1,4 @@
-import { requestJson } from './api.js';
+import { configureLogoutButton, requestJson } from './api.js';
 
 const projectList = document.querySelector('#project-list');
 const status = document.querySelector('#projects-status');
@@ -12,6 +12,8 @@ const state = {
 if (createProjectForm instanceof HTMLFormElement) {
   createProjectForm.addEventListener('submit', handleCreateProject);
 }
+
+configureLogoutButton();
 
 await loadProjects();
 
@@ -130,6 +132,10 @@ function createProjectCard(project) {
     createNavLink('Roles', `/projects/${project.id}/roles`),
     createNavLink('PATs', `/projects/${project.id}/pats`)
   );
+
+  if (project.role !== 'developer') {
+    navigation.append(createNavLink('Audit', `/projects/${project.id}/audit`));
+  }
 
   card.append(header, body, navigation);
   return card;

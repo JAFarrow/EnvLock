@@ -136,6 +136,12 @@ button:disabled {
   color: var(--danger);
 }
 
+.button-secondary {
+  background: rgb(13 17 23 / 72%);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+}
+
 .button-small {
   margin-top: 0;
   padding: 0.4rem 0.7rem;
@@ -204,15 +210,38 @@ button:disabled {
 }
 
 .workspace-header {
+  align-items: flex-start;
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   justify-content: space-between;
 }
 
-.workspace-header > .badge {
+.workspace-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.workspace-header > .badge,
+.workspace-actions > .badge {
   align-self: flex-start;
   font-size: 0.9rem;
+  margin: 0;
   padding: 0.33rem 0.73rem;
+}
+
+.workspace-actions > #logout-button {
+  line-height: 1;
+  padding: 0.39rem 0.73rem;
+}
+
+.workspace-actions > #logout-button:hover {
+  border-color: rgb(103 232 249 / 45%);
+  color: var(--accent);
 }
 
 .projects-layout {
@@ -548,6 +577,35 @@ button:disabled {
   align-self: end;
 }
 
+.audit-item {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+}
+
+.audit-summary {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 1rem;
+}
+
+.audit-summary::-webkit-details-marker {
+  display: none;
+}
+
+.audit-details {
+  border-top: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0;
+  overflow: auto;
+  padding: 1rem;
+}
+
 .token-reveal {
   border: 1px solid rgb(134 239 172 / 45%);
   border-radius: 1rem;
@@ -628,6 +686,14 @@ button:disabled {
   .workspace {
     border-radius: 1.1rem;
     padding: 1rem;
+  }
+
+  .workspace-actions {
+    width: 100%;
+  }
+
+  .workspace-actions > #logout-button {
+    margin-left: auto;
   }
 
   .secret-button-row {
