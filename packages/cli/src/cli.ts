@@ -71,10 +71,11 @@ export async function runCli(
   if (command === 'doctor') {
     const options = parseDoctorOptions(rest);
     const config = resolveConfig(options, env);
-    const expectedKeys = await readEnvExampleKeys(options.example ?? defaultExamplePath);
+    const examplePath = options.example ?? defaultExamplePath;
+    const expectedKeys = await readEnvExampleKeys(examplePath);
     const actualKeys = await fetchSecretKeys(config);
 
-    return reportDoctorResult(expectedKeys, actualKeys, config.environment);
+    return reportDoctorResult(expectedKeys, actualKeys, config.environment, examplePath);
   }
 
   if (command !== 'run') {
@@ -424,22 +425,37 @@ function parseEnvExampleKey(line: string): string | null {
 function reportDoctorResult(
   expectedKeys: string[],
   actualKeys: string[],
-  environment: string
+  environment: string,
+  examplePath: string
 ): number {
   const actualKeySet = new Set(actualKeys);
+  const expectedKeySet = new Set(expectedKeys);
   const missingKeys = expectedKeys.filter((key) => !actualKeySet.has(key));
+  const extraKeys = actualKeys.filter((key) => !expectedKeySet.has(key));
 
-  if (missingKeys.length === 0) {
+  if (missingKeys.length === 0 && extraKeys.length === 0) {
     process.stdout.write(
-      `EnvLock doctor passed. ${String(expectedKeys.length)} expected secret key(s) exist in ${environment}.\n`
+      `EnvLock doctor passed. ${String(expectedKeys.length)} expected secret key(s) match persisted secrets in ${environment}.\n`
     );
     return 0;
   }
 
-  process.stdout.write(`EnvLock doctor found missing secrets in ${environment}:\n`);
+  if (missingKeys.length > 0) {
+    process.stdout.write(`EnvLock doctor found missing secrets in ${environment}:\n`);
 
-  for (const key of missingKeys) {
-    process.stdout.write(`- ${key}\n`);
+    for (const key of missingKeys) {
+      process.stdout.write(`- ${key}\n`);
+    }
+  }
+
+  if (extraKeys.length > 0) {
+    process.stdout.write(
+      `EnvLock doctor found persisted secrets not present in ${examplePath} for ${environment}:\n`
+    );
+
+    for (const key of extraKeys) {
+      process.stdout.write(`- ${key}\n`);
+    }
   }
 
   return 1;

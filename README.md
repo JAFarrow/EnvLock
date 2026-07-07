@@ -86,7 +86,7 @@ The CLI never prints secret values. Prefer `ENVLOCK_PAT` over `--pat` because co
 
 ### Doctor Mode
 
-Doctor mode compares keys from a local `.env.example` file against the secret keys stored in EnvLock for an environment. It does not fetch or print secret values.
+Doctor mode compares keys from a local `.env.example` file against the secret keys stored in EnvLock for an environment. It reports keys missing from EnvLock and persisted EnvLock keys missing from the example file. It does not fetch or print secret values.
 
 ```sh
 ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... envlock doctor -e development

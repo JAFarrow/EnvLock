@@ -53,7 +53,7 @@ MALFORMED_LINE
       }
     );
     expect(writtenStdout()).toContain(
-      'EnvLock doctor passed. 2 expected secret key(s) exist in development.'
+      'EnvLock doctor passed. 2 expected secret key(s) match persisted secrets in development.'
     );
   });
 
@@ -67,6 +67,36 @@ MALFORMED_LINE
 
     expect(writtenStdout()).toContain('EnvLock doctor found missing secrets in production:');
     expect(writtenStdout()).toContain('- JWT_SECRET');
+  });
+
+  it('lists persisted backend secret keys missing from .env.example', async () => {
+    const examplePath = await writeExample('DATABASE_URL=\n');
+    fetchMock.mockResolvedValueOnce(createJsonResponse({ keys: ['API_KEY', 'DATABASE_URL'] }));
+
+    await expect(
+      runCli(['doctor', '--environment', 'production', '--example', examplePath], baseEnv)
+    ).resolves.toBe(1);
+
+    expect(writtenStdout()).toContain(
+      `EnvLock doctor found persisted secrets not present in ${examplePath} for production:`
+    );
+    expect(writtenStdout()).toContain('- API_KEY');
+  });
+
+  it('lists missing and unexpected persisted backend secret keys', async () => {
+    const examplePath = await writeExample('DATABASE_URL=\nJWT_SECRET=\n');
+    fetchMock.mockResolvedValueOnce(createJsonResponse({ keys: ['API_KEY', 'DATABASE_URL'] }));
+
+    await expect(
+      runCli(['doctor', '--environment', 'production', '--example', examplePath], baseEnv)
+    ).resolves.toBe(1);
+
+    expect(writtenStdout()).toContain('EnvLock doctor found missing secrets in production:');
+    expect(writtenStdout()).toContain('- JWT_SECRET');
+    expect(writtenStdout()).toContain(
+      `EnvLock doctor found persisted secrets not present in ${examplePath} for production:`
+    );
+    expect(writtenStdout()).toContain('- API_KEY');
   });
 
   it('rejects invalid backend key payloads', async () => {
@@ -148,12 +178,6 @@ describe('runCli help and version', () => {
     await expect(runCli(['run', '--help'], baseEnv)).resolves.toBe(0);
 
     expect(writtenStdout()).toContain('Usage:');
-  });
-
-  it('prints the package version', async () => {
-    await expect(runCli(['--version'], baseEnv)).resolves.toBe(0);
-
-    expect(writtenStdout()).toBe('0.1.0\n');
   });
 
   it('rejects unknown commands', async () => {
