@@ -12,11 +12,13 @@
     "build:api": "npm run build -w api",
     "build:cli": "npm run build -w packages/cli",
     "dev:api": "npm run start:dev -w api",
+    "dev:cli": "npm run start:dev -w packages/cli",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start:api": "npm run start -w api",
+    "start:cli": "npm run start -w packages/cli",
     "test": "npm run test:api && npm run test:cli",
     "test:api": "npm test -w api",
     "test:cli": "npm test -w packages/cli"
