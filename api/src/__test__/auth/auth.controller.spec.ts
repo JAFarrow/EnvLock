@@ -95,7 +95,7 @@ describe('AuthController', () => {
       httpOnly: true,
       maxAge: 3_600_000,
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'strict',
       secure: false
     });
     expect(configGet).toHaveBeenCalledWith('NODE_ENV', { infer: true });
@@ -113,7 +113,7 @@ describe('AuthController', () => {
     expect(clearCookie).toHaveBeenCalledWith(accessTokenCookieName, {
       httpOnly: true,
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'strict',
       secure: false
     });
     expect(configGet).toHaveBeenCalledWith('NODE_ENV', { infer: true });

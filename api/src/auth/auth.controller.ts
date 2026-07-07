@@ -36,7 +36,7 @@ export class AuthController {
       httpOnly: true,
       maxAge: result.expiresIn * 1000,
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'strict',
       secure: nodeEnv === 'production'
     });
 
@@ -51,7 +51,7 @@ export class AuthController {
     response.clearCookie(cookieName, {
       httpOnly: true,
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'strict',
       secure: nodeEnv === 'production'
     });
 
