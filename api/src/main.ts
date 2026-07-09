@@ -2,6 +2,7 @@ import { ConsoleLogger, type INestApplication, RequestMethod } from '@nestjs/com
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { type NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 
 import { EnvironmentVariables } from './config/environment';
 import { configureFrontend } from './frontend/configure-frontend';
@@ -14,6 +15,10 @@ export function applyApiPrefix(app: INestApplication): void {
   });
 }
 
+export function applySecurityHeaders(app: INestApplication): void {
+  app.use(helmet());
+}
+
 async function bootstrap(): Promise<void> {
   const { AppModule } = (await import('./app.module.js')) as typeof import('./app.module.js');
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
@@ -22,6 +27,7 @@ async function bootstrap(): Promise<void> {
   const logger = app.get(ConsoleLogger);
 
   app.useLogger(logger);
+  applySecurityHeaders(app);
   configureFrontend(app);
   applyApiPrefix(app);
   await app.listen(port);

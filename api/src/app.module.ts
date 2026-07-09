@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { ConsoleLogger, Module, type LogLevel } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
@@ -14,9 +16,15 @@ import { PersonalAccessTokensModule } from './personal-access-tokens/personal-ac
 import { ProjectsModule } from './projects/projects.module';
 import { SecretsModule } from './secrets/secrets.module';
 
+const apiEnvironmentFilePath = join(__dirname, '..', '.env');
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
+    ConfigModule.forRoot({
+      envFilePath: apiEnvironmentFilePath,
+      isGlobal: true,
+      validate: validateEnvironment
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: createTypeOrmOptions

@@ -12,12 +12,14 @@ This document captures repository conventions for future automated and human dev
 
 ## Workspace Commands
 
-- Install dependencies from the repository root with `npm install`.
+- Install existing dependencies from the repository root with `npm ci`.
 - Build all workspaces with `npm run build`.
 - Build only the API with `npm run build:api`.
 - Build only the CLI package with `npm run build:cli`.
 - Start the API in watch mode with `npm run dev:api`.
-- Run API tests with `npm test`.
+- Run all tests with `npm test`.
+- Run API tests with `npm run test:api`.
+- Run CLI tests with `npm run test:cli`.
 - Run lint checks with `npm run lint`.
 - Apply safe lint fixes with `npm run lint:fix`.
 - Format the repo with `npm run format`.
@@ -68,6 +70,7 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 - Where possible, use Nest exception filters for cross-cutting exception-to-HTTP response mapping rather than handling infrastructure errors inside services.
 - When a database failure is expected and should produce a stable HTTP response, update `PostgresExceptionFilter` instead of catching TypeORM errors in feature services.
 - Use Nest's built-in `ConsoleLogger` for API logs; keep production logs single-line JSON for Render.
+- Apply HTTP security headers through `applySecurityHeaders` in `api/src/main.ts` so bootstrap behavior remains directly testable.
 - Keep TypeORM options centralized under `api/src/database` and add new entity classes to the shared entity list.
 - Organize API code by feature under `api/src/<feature>`.
 - Keep primary Nest entry points such as `*.controller.ts`, `*.module.ts`, and `*.service.ts` at the feature root when present.
@@ -77,7 +80,7 @@ If formatting changes are required, run `npm run format`, then repeat `npm run f
 
 - Shared development tooling belongs in the root `devDependencies`.
 - Runtime dependencies belong in the workspace that imports them.
-- Install API runtime dependencies with `npm install <package> -w @envlock/api`.
+- Install API runtime dependencies with `npm install <package> -w api`.
 - Install CLI runtime dependencies with `npm install <package> -w packages/cli`.
 - Install shared dev dependencies with `npm install --save-dev <package>` from the repository root.
 

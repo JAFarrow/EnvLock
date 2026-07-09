@@ -2,16 +2,21 @@
 
 EnvLock is a lightweight secret management tool for local Node.js development, providing repository and environment scoped secrets through a web dashboard and an NPM CLI that fetches and injects variables before running an application.
 
-## API Local Setup
+## Repository Layout
 
-The API is a NestJS application in the `api` workspace.
+- `api/`: NestJS API and static web dashboard.
+- `packages/cli/`: `envlock` CLI package.
+- `docs/`: repository conventions for future development work.
+
+## Local Setup
 
 ### Prerequisites
 
 - Node.js 22 or newer
 - npm
+- PostgreSQL
 
-### Install Dependencies
+### Install
 
 Install dependencies from the repository root:
 
@@ -19,29 +24,36 @@ Install dependencies from the repository root:
 npm ci
 ```
 
-### Configure Environment
+### Database
 
-The API requires a Postgres database URL, JWT secret, and secret encryption key configuration. Other settings have development defaults.
+The API requires a PostgreSQL database. Set `DATABASE_URL` in `api/.env` to a database the API can connect to.
 
-Supported environment variables:
+### API Environment
 
-- `NODE_ENV`: `development`, `test`, or `production`; defaults to `development`
-- `PORT`: API port; defaults to `3000`
-- `LOG_FORMAT`: `pretty` or `json`; defaults to `pretty` outside production and `json` in production
+Copy the API environment template:
+
+```sh
+cp api/.env.example api/.env
+```
+
+Generate a real local encryption key and place it in `api/.env`:
+
+```sh
+openssl rand -base64 32
+```
+
+The backend explicitly loads `api/.env`. Exported environment variables can still override local values when needed.
+
+Required API settings:
+
 - `DATABASE_URL`: Postgres connection URL; required
 - `JWT_SECRET`: secret used to sign API bearer tokens; required
-- `JWT_ACCESS_TOKEN_TTL_SECONDS`: access token lifetime in seconds; defaults to `3600`
-- `JWT_ACCESS_TOKEN_COOKIE_NAME`: cookie name for browser access tokens; defaults to `envlock_access_token`
 - `SECRET_ENCRYPTION_KEY_BASE64`: exactly 32 random bytes encoded as Base64; required
 - `SECRET_ENCRYPTION_KEY_VERSION`: positive integer version for the active secret encryption key; required
 
-Example:
+Other API settings have development defaults: `NODE_ENV=development`, `PORT=3000`, `LOG_FORMAT=pretty`, `JWT_ACCESS_TOKEN_TTL_SECONDS=3600`, and `JWT_ACCESS_TOKEN_COOKIE_NAME=envlock_access_token`.
 
-```sh
-DATABASE_URL=postgres://envlock:envlock@localhost:5432/envlock JWT_SECRET=replace-me SECRET_ENCRYPTION_KEY_BASE64=replace-with-generated-base64-key SECRET_ENCRYPTION_KEY_VERSION=1 PORT=4000 LOG_FORMAT=json npm run dev:api
-```
-
-### Run The API
+### Run
 
 Start the API in watch mode:
 
@@ -49,7 +61,19 @@ Start the API in watch mode:
 npm run dev:api
 ```
 
-The API listens on `http://localhost:3000` by default.
+By default, the dashboard is available at `http://localhost:3000`, API routes are under `/api`, and health checks are available at `/health`.
+
+In non-production environments, TypeORM auto-synchronizes the local database schema. Production does not auto-sync schemas.
+
+### First Dashboard Flow
+
+1. Open `http://localhost:3000/register`.
+2. Register with an email and a password of at least 12 characters.
+3. Log in and create a project.
+4. Create an environment such as `development`.
+5. Add secrets using uppercase keys, for example `DATABASE_URL`.
+6. Create a project personal access token from the project PAT page.
+7. Use that PAT with the CLI.
 
 ## CLI Usage
 
@@ -84,6 +108,20 @@ envlock run --api-url http://localhost:3000 -e production -- npm start
 
 The CLI never prints secret values. Prefer `ENVLOCK_PAT` over `--pat` because command-line flags can be stored in shell history or visible in process lists.
 
+### Local CLI Development
+
+Run the workspace CLI without installing it globally:
+
+```sh
+npm run start -w packages/cli -- --help
+```
+
+Example using the local CLI against the local API:
+
+```sh
+ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... npm run start -w packages/cli -- run -e development -- node -e "console.log('secrets loaded')"
+```
+
 ### Doctor Mode
 
 Doctor mode compares keys from a local `.env.example` file against the secret keys stored in EnvLock for an environment. It reports keys missing from EnvLock and persisted EnvLock keys missing from the example file. It does not fetch or print secret values.
@@ -98,12 +136,19 @@ Use `--example` when the example file is not at `.env.example`:
 envlock doctor -e production --example config/.env.example
 ```
 
-### Build
+## Build
 
-Build the API:
+Build all workspaces:
+
+```sh
+npm run build
+```
+
+Build one workspace:
 
 ```sh
 npm run build:api
+npm run build:cli
 ```
 
 Start the built API:
@@ -112,16 +157,24 @@ Start the built API:
 npm run start:api
 ```
 
-### Test And Lint
+## Test And Lint
 
-Run API tests:
+Run all tests:
 
 ```sh
 npm test
 ```
 
-Run linting for the repository:
+Run workspace-specific tests:
+
+```sh
+npm run test:api
+npm run test:cli
+```
+
+Run linting and formatting checks:
 
 ```sh
 npm run lint
+npm run format:check
 ```

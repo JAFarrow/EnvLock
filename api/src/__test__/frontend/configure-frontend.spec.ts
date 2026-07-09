@@ -4,7 +4,7 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
 import { configureFrontend } from '../../frontend/configure-frontend';
-import { applyApiPrefix } from '../../main';
+import { applyApiPrefix, applySecurityHeaders } from '../../main';
 
 describe('configureFrontend', () => {
   let app: INestApplication | undefined;
@@ -41,6 +41,17 @@ describe('configureFrontend', () => {
     expect(projectsResponse.text).not.toContain('Create Environment');
     expect(projectsResponse.text).not.toContain('Add Member');
     expect(projectsResponse.text).not.toContain('Create Token');
+  });
+
+  it('applies security headers to frontend responses', async () => {
+    await initHttpApp();
+
+    const server = app?.getHttpServer() as Parameters<typeof request>[0];
+    const response = await request(server).get('/login').expect(200);
+
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['x-frame-options']).toBe('SAMEORIGIN');
+    expect(response.headers['content-security-policy']).toContain("default-src 'self'");
   });
 
   it('serves dynamic project management frontend pages', async () => {
@@ -90,6 +101,7 @@ describe('configureFrontend', () => {
     const module = await Test.createTestingModule({}).compile();
 
     app = module.createNestApplication<NestExpressApplication>();
+    applySecurityHeaders(app);
     configureFrontend(app);
     applyApiPrefix(app);
     await app.init();
