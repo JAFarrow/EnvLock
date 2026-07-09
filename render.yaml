@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: envlock-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build:api
+    preDeployCommand: npm run migration:run -w api
+    startCommand: npm run start:api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.13.0
+      - key: NODE_ENV
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: DATABASE_URL
+        fromDatabase:
+          name: envlock-db
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: SECRET_ENCRYPTION_KEY_BASE64
+        sync: false
+      - key: SECRET_ENCRYPTION_KEY_VERSION
+        value: '1'
+      - key: JWT_ACCESS_TOKEN_TTL_SECONDS
+        value: '3600'
+      - key: JWT_ACCESS_TOKEN_COOKIE_NAME
+        value: envlock_access_token
+
+databases:
+  - name: envlock-db
+    databaseName: envlock
+    user: envlock
+    plan: free

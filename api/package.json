@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "nest build",
+    "migration:run": "node dist/database/run-migrations.js",
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
