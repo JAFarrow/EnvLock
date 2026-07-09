@@ -4,8 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci --include=dev && npm run build:api
-    preDeployCommand: npm run migration:run -w api
-    startCommand: npm run start:api
+    startCommand: npm run migration:run -w api && npm run start:api
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
