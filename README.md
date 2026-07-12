@@ -1,6 +1,10 @@
 # EnvLock
 
-EnvLock is a lightweight secret management tool for local Node.js development, providing repository and environment scoped secrets through a web dashboard and an NPM CLI that fetches and injects variables before running an application.
+EnvLock is a lightweight secret management tool that provides project- and environment-scoped secrets through a web dashboard and an npm CLI. The CLI fetches secrets and injects them into a subprocess environment before running a command.
+
+## Hosted Deployment
+
+The EnvLock dashboard and API are deployed at [https://envlock-api.onrender.com/](https://envlock-api.onrender.com/). API routes are available under `/api`, and the health check is available at [`/health`](https://envlock-api.onrender.com/health).
 
 ## Repository Layout
 
@@ -23,10 +27,6 @@ Install dependencies from the repository root:
 ```sh
 npm ci
 ```
-
-### Database
-
-The API requires a PostgreSQL database. Set `DATABASE_URL` in `api/.env` to a database the API can connect to.
 
 ### API Environment
 
@@ -52,6 +52,12 @@ Required API settings:
 - `SECRET_ENCRYPTION_KEY_VERSION`: positive integer version for the active secret encryption key; required
 
 Other API settings have development defaults: `NODE_ENV=development`, `PORT=3000`, `LOG_FORMAT=pretty`, `JWT_ACCESS_TOKEN_TTL_SECONDS=3600`, and `JWT_ACCESS_TOKEN_COOKIE_NAME=envlock_access_token`.
+
+Defaults apply when a setting is omitted. Remove blank optional settings from `api/.env` or assign them valid values.
+
+### Database
+
+The API requires a PostgreSQL database. Set `DATABASE_URL` in `api/.env` to a database the API can connect to.
 
 ### Run
 
@@ -87,7 +93,7 @@ npm install -g @jfarrow777/envlock
 
 Required environment variables:
 
-- `ENVLOCK_API_URL`: EnvLock API URL, for example `http://localhost:3000`
+- `ENVLOCK_API_URL`: EnvLock API URL, for example `https://envlock-api.onrender.com/`
 - `ENVLOCK_PAT`: project personal access token
 
 The environment slug is required for each run. Provide it with `-e` or `--environment`. `ENVLOCK_ENVIRONMENT` is also supported as an optional fallback, but it is not required.
@@ -97,13 +103,13 @@ EnvLock does not provide CLI configuration defaults. Missing required configurat
 Example:
 
 ```sh
-ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... envlock run -e development -- npm run dev
+ENVLOCK_API_URL=https://envlock-api.onrender.com/ ENVLOCK_PAT=envlock_pat_... envlock run -e development -- npm run dev
 ```
 
 Per-run flags can override environment variables:
 
 ```sh
-envlock run --api-url http://localhost:3000 -e production -- npm start
+envlock run --api-url https://envlock-api.onrender.com/ -e production -- npm start
 ```
 
 The CLI never prints secret values. Prefer `ENVLOCK_PAT` over `--pat` because command-line flags can be stored in shell history or visible in process lists.
@@ -127,7 +133,7 @@ ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... npm run start 
 Doctor mode compares keys from a local `.env.example` file against the secret keys stored in EnvLock for an environment. It reports keys missing from EnvLock and persisted EnvLock keys missing from the example file. It does not fetch or print secret values.
 
 ```sh
-ENVLOCK_API_URL=http://localhost:3000 ENVLOCK_PAT=envlock_pat_... envlock doctor -e development
+ENVLOCK_API_URL=https://envlock-api.onrender.com/ ENVLOCK_PAT=envlock_pat_... envlock doctor -e development
 ```
 
 Use `--example` when the example file is not at `.env.example`:

@@ -71,6 +71,9 @@ describe('JwtAuthGuard', () => {
     await expect(
       guard.canActivate(createExecutionContext({ cookie: `${accessTokenCookieName}=` }).context)
     ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(
+      guard.canActivate(createExecutionContext({ cookie: 'malformed; theme=dark' }).context)
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('rejects invalid tokens and tokens without a subject', async () => {

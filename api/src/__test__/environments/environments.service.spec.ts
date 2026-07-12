@@ -380,6 +380,16 @@ describe('EnvironmentsService', () => {
     expect(environmentRepository.save).not.toHaveBeenCalled();
   });
 
+  it('returns 404 when updating an environment that is not active', async () => {
+    await expect(
+      environmentsService.updateEnvironment(userId, projectId, environmentId, {
+        name: 'Production EU'
+      })
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(environmentRepository.save).not.toHaveBeenCalled();
+  });
+
   it('allows a maintainer to update environment metadata', async () => {
     projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
       createMembership({ role: ProjectRole.MAINTAINER })
@@ -410,6 +420,16 @@ describe('EnvironmentsService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
 
     expect(environmentRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('does not check availability when an environment keeps its current slug', async () => {
+    environmentRepository.findActiveByProjectAndId.mockResolvedValueOnce(createEnvironment());
+
+    await environmentsService.updateEnvironment(userId, projectId, environmentId, {
+      slug: 'production'
+    });
+
+    expect(environmentRepository.findActiveByProjectAndSlug).not.toHaveBeenCalled();
   });
 
   it('allows an owner to archive an environment without deleting it', async () => {
@@ -447,6 +467,14 @@ describe('EnvironmentsService', () => {
     await expect(
       environmentsService.archiveEnvironment(userId, projectId, environmentId)
     ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(environmentRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when archiving an environment that is not active', async () => {
+    await expect(
+      environmentsService.archiveEnvironment(userId, projectId, environmentId)
+    ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(environmentRepository.save).not.toHaveBeenCalled();
   });

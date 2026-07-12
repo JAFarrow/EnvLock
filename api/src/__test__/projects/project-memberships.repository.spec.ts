@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { type Repository } from 'typeorm';
+import { type EntityManager, type Repository } from 'typeorm';
 
 import { ProjectMembershipEntity } from '../../projects/entities/project-membership.entity';
 import { ProjectMembershipsRepository } from '../../projects/repositories/project-memberships.repository';
@@ -119,6 +119,48 @@ describe('ProjectMembershipsRepository', () => {
     jest.restoreAllMocks();
   });
 
+  it('creates memberships with a nullable inviter by default', async () => {
+    await expect(
+      repository.create({ projectId, userId, role: ProjectRole.DEVELOPER })
+    ).resolves.toEqual(expect.objectContaining({ projectId, userId }));
+
+    expect(typeOrmRepository.create).toHaveBeenCalledWith({
+      projectId,
+      userId,
+      role: ProjectRole.DEVELOPER,
+      addedByUserId: null
+    });
+    expect(typeOrmRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates memberships with an inviter through a transaction repository', async () => {
+    const managerQueryBuilder = createQueryBuilder([]);
+    const managerRepository: TypeOrmMembershipRepositoryMock = {
+      ...typeOrmRepository,
+      create: jest.fn((input) => Object.assign(createMembership(), input)),
+      save: jest.fn((membership) => Promise.resolve(membership)),
+      createQueryBuilder: jest.fn(() => managerQueryBuilder)
+    };
+    const getRepository = jest.fn(
+      () => managerRepository as unknown as Repository<ProjectMembershipEntity>
+    );
+    const manager = { getRepository } as unknown as EntityManager;
+
+    await repository.create(
+      { projectId, userId, role: ProjectRole.MAINTAINER, addedByUserId: userId },
+      manager
+    );
+
+    expect(getRepository).toHaveBeenCalledWith(ProjectMembershipEntity);
+    expect(managerRepository.create).toHaveBeenCalledWith({
+      projectId,
+      userId,
+      role: ProjectRole.MAINTAINER,
+      addedByUserId: userId
+    });
+    expect(typeOrmRepository.create).not.toHaveBeenCalled();
+  });
+
   it('lists active project memberships for a user through projects ordered by updated time', async () => {
     await expect(repository.findActiveProjectsByUserId(userId)).resolves.toEqual([
       expect.objectContaining({ userId, projectId })
@@ -153,6 +195,15 @@ describe('ProjectMembershipsRepository', () => {
       projectId
     });
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('membership.userId = :userId', { userId });
+  });
+
+  it('returns null when active and direct membership lookups find no record', async () => {
+    queryBuilder = createQueryBuilder([]);
+
+    await expect(
+      repository.findActiveProjectByProjectAndUser(projectId, userId)
+    ).resolves.toBeNull();
+    await expect(repository.findByProjectAndUser(projectId, userId)).resolves.toBeNull();
   });
 
   it('lists project memberships with users in deterministic order', async () => {

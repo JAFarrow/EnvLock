@@ -1,4 +1,4 @@
-import { type ExecutionContext } from '@nestjs/common';
+import { type ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
 import { hashPersonalAccessTokenSecret } from '../../auth/personal-access-token-secret';
 import { type AuthenticatedPersonalAccessTokenRequest } from '../../auth/contracts/personal-access-token-request';
@@ -133,9 +133,18 @@ describe('PersonalAccessTokenAuthGuard', () => {
     });
   });
 
+  it('rejects invalid PATs at the HTTP guard boundary', async () => {
+    const { context } = createExecutionContext('Bearer invalid-token');
+
+    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
   it('rejects malformed PATs before querying storage', async () => {
     await expect(authService.validate(undefined)).resolves.toBeNull();
     await expect(authService.validate('not-a-pat')).resolves.toBeNull();
+    await expect(
+      authService.validate(`Bearer another_prefix_${tokenId}.${tokenSecret}`)
+    ).resolves.toBeNull();
     await expect(
       authService.validate(`Bearer envlock_pat_not-a-uuid.${tokenSecret}`)
     ).resolves.toBeNull();

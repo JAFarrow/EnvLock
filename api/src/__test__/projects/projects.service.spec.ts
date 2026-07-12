@@ -281,6 +281,26 @@ describe('ProjectsService', () => {
     });
   });
 
+  it('leaves omitted project metadata unchanged during partial updates', async () => {
+    const membership = createMembership();
+    projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
+      membership
+    );
+
+    await projectsService.updateProject(userId, projectId, { name: 'Updated API' });
+
+    expect(projectsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Updated API',
+        description: membership.project.description,
+        repositoryUrl: membership.project.repositoryUrl
+      })
+    );
+    expect(auditEventsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ details: { changedFields: ['name'] } })
+    );
+  });
+
   it('returns 403 when a non-owner member updates a project', async () => {
     projectMembershipsRepository.findActiveProjectByProjectAndUser.mockResolvedValueOnce(
       createMembership({ role: ProjectRole.DEVELOPER })

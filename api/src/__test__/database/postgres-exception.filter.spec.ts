@@ -156,4 +156,27 @@ describe('PostgresExceptionFilter', () => {
       message: 'query failed'
     });
   });
+
+  it.each(['query failed', null, {}])(
+    'safely handles query failures with malformed driver metadata: %p',
+    (driverError) => {
+      const filter = new PostgresExceptionFilter();
+      const response = createResponse();
+      const exception = createQueryFailedError('99999');
+      Object.defineProperty(exception, 'driverError', { value: driverError });
+
+      filter.catch(exception, createHost(response));
+
+      expect(response.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(response.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Internal server error',
+        error: 'Internal Server Error'
+      });
+      expect(errorSpy).toHaveBeenCalledWith('Unhandled Postgres query failure', {
+        code: undefined,
+        message: 'query failed'
+      });
+    }
+  );
 });

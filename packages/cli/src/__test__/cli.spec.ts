@@ -57,6 +57,71 @@ MALFORMED_LINE
     );
   });
 
+  it('supports equals-form doctor options and ignores invalid example entries', async () => {
+    const examplePath = await writeExample(`
+export    API_KEY=value
+INVALID-KEY=value
+=missing-key
+`);
+    fetchMock.mockResolvedValueOnce(createJsonResponse({ keys: ['API_KEY'] }));
+
+    await expect(
+      runCli(
+        [
+          'doctor',
+          '--api-url=https://override.example/',
+          '--environment=preview',
+          '--pat=override-pat',
+          `--example=${examplePath}`
+        ],
+        baseEnv
+      )
+    ).resolves.toBe(0);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL('https://override.example/api/cli/secrets/keys?environmentSlug=preview'),
+      {
+        headers: {
+          Authorization: 'Bearer override-pat',
+          Accept: 'application/json'
+        }
+      }
+    );
+  });
+
+  it('supports separate-value doctor configuration options', async () => {
+    const examplePath = await writeExample('DATABASE_URL=\n');
+    fetchMock.mockResolvedValueOnce(createJsonResponse({ keys: ['DATABASE_URL'] }));
+
+    await expect(
+      runCli(
+        [
+          'doctor',
+          '--api-url',
+          'https://separate.example',
+          '-e',
+          'qa',
+          '--pat',
+          'separate-pat',
+          '--example',
+          examplePath
+        ],
+        baseEnv
+      )
+    ).resolves.toBe(0);
+  });
+
+  it('rejects malformed doctor options before reading the example', async () => {
+    await expect(runCli(['doctor', '--unknown'], baseEnv)).rejects.toThrow(
+      'Unknown doctor option: --unknown'
+    );
+    await expect(runCli(['doctor', '--example'], baseEnv)).rejects.toThrow(
+      'Missing value for --example'
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('lists missing backend secret keys and exits with a failure code', async () => {
     const examplePath = await writeExample('DATABASE_URL=\nJWT_SECRET=\n');
     fetchMock.mockResolvedValueOnce(createJsonResponse({ keys: ['DATABASE_URL'] }));
@@ -180,6 +245,12 @@ describe('runCli help and version', () => {
     expect(writtenStdout()).toContain('Usage:');
   });
 
+  it('prints the package version', async () => {
+    await expect(runCli(['--version'], baseEnv)).resolves.toBe(0);
+
+    expect(writtenStdout()).toMatch(/^\d+\.\d+\.\d+\n$/);
+  });
+
   it('rejects unknown commands', async () => {
     await expect(runCli(['deploy'], baseEnv)).rejects.toThrow('Unknown command: deploy');
   });
@@ -237,6 +308,17 @@ describe('runCli run', () => {
     await expect(
       runCli(['run', '-e', 'development', '--', process.execPath, '-e', 'process.exit(7)'], baseEnv)
     ).resolves.toBe(7);
+  });
+
+  it('rejects when the subprocess cannot be started', async () => {
+    fetchMock.mockResolvedValueOnce(createJsonResponse({ variables: {} }));
+
+    await expect(
+      runCli(
+        ['run', '-e', 'development', '--', `missing-envlock-command-${String(process.pid)}`],
+        baseEnv
+      )
+    ).rejects.toThrow('Unable to start subprocess:');
   });
 
   it('uses environment configuration fallbacks', async () => {

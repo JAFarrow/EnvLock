@@ -342,6 +342,17 @@ describe('PersonalAccessTokensService', () => {
     expect(personalAccessTokenRepository.create).not.toHaveBeenCalled();
   });
 
+  it('rejects malformed expiration dates', async () => {
+    await expect(
+      service.create(userId, projectId, {
+        name: 'invalid expiration',
+        expiresAt: 'not-a-date'
+      })
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(personalAccessTokenRepository.create).not.toHaveBeenCalled();
+  });
+
   it('allows expirations exactly 90 days in the future', async () => {
     await expect(
       service.create(userId, projectId, {

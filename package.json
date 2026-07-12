@@ -21,7 +21,9 @@
     "start:cli": "npm run start -w packages/cli",
     "test": "npm run test:api && npm run test:cli",
     "test:api": "npm test -w api",
-    "test:cli": "npm test -w packages/cli"
+    "test-coverage:api": "npm run test:coverage -w api",
+    "test:cli": "npm test -w packages/cli",
+    "test-coverage:cli": "npm run test:coverage -w packages/cli"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
