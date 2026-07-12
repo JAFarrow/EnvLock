@@ -6,6 +6,10 @@ EnvLock is a lightweight secret management tool that provides project- and envir
 
 The EnvLock dashboard and API are deployed at [https://envlock-api.onrender.com/](https://envlock-api.onrender.com/). API routes are available under `/api`, and the health check is available at [`/health`](https://envlock-api.onrender.com/health).
 
+## Task Board
+
+Project tasks and development progress are tracked on the [EnvLock Development Board](https://trello.com/invite/b/6a26ec3dafff07b29d8e968b/ATTI37aa053a22f1857c18b4267c72a8b442CCC57C43/envlock-development-board).
+
 ## Repository Layout
 
 - `api/`: NestJS API and static web dashboard.
